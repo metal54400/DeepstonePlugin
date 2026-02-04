@@ -3,3 +3,18 @@ version: '0.1'
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
 authors: [ Deepstone-Studio ]
+
+commands:
+  clearlag:
+    description: Force le nettoyage des items au sol
+    usage: /clearlag
+
+permissions:
+  deepstone.clearlag:
+    description: Autorise /clearlag
+    default: op
+
+  deepstone.pl:
+    description: Autorise l'utilisation de /pl
+    default: op
+

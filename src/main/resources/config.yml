@@ -1,0 +1,7 @@
+interval-seconds: 300
+warnings:
+  - time: 60
+    message: "&eNettoyage des items dans &c60 &esecondes!"
+  - time: 10
+    message: "&eNettoyage des items dans &c10 &esecondes!"
+done-message: "&a{count} &aitems ont été supprimés."
