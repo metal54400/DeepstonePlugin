@@ -26,7 +26,7 @@ public class ClearService {
             }
         }
 
-        plugin.getLogger().info("ClearLagg: " + count + " items supprimés.");
+        plugin.getLogger().info("&7[&7e?&7] ClearLagg: " + count + " items supprimés.");
         return count;
     }
 }
