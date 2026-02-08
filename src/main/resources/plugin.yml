@@ -1,5 +1,5 @@
 name: Deepstone
-version: '0.2
+version: '0.3'
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
 authors: [ Deepstone-Studio ]
