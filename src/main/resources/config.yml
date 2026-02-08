@@ -1,7 +1,7 @@
 interval-seconds: 300
 warnings:
   - time: 60
-    message: "&eNettoyage des items dans &c60 &esecondes!"
+    message: "§7[§c!&7] Nettoyage des items dans &c60 &7secondes!"
   - time: 10
-    message: "&eNettoyage des items dans &c10 &esecondes!"
-done-message: "&a{count} &aitems ont été supprimés."
+    message: "§7[§c!&7] Nettoyage des items dans &c10 &7secondes!"
+done-message: "§7[§e?&7] {count} &aitems ont été supprimés."
