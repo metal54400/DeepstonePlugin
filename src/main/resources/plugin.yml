@@ -1,8 +1,11 @@
 name: Deepstone
-version: '0.2'
+version: '0.2
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
 authors: [ Deepstone-Studio ]
+softdepend:
+  - PlaceholderAPI
+  - Essentials
 
 commands:
   clearlag:
@@ -16,5 +19,13 @@ permissions:
 
   deepstone.pl:
     description: Autorise l'utilisation de /pl
+    default: op
+
+  deepstone.afk.bypass:
+    description: Ne passe jamais AFK via DeepstoneAFK (mode sans Essentials).
+    default: op
+
+  deepstone.afk.kickexempt:
+    description: Immunisé contre l'auto-kick AFK via DeepstoneAFK (mode sans Essentials).
     default: op
 

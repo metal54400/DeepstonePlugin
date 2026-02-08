@@ -5,3 +5,13 @@ warnings:
   - time: 10
     message: "§7[§c!&7] Nettoyage des items dans &c10 &7secondes!"
 done-message: "§7[§e?&7] {count} &aitems ont été supprimés."
+
+afk:
+  # Temps avant AFK (secondes). -1 = désactiver l'AFK auto (mode Deepstone)
+  timeout-seconds: 300
+
+  # Temps avant kick une fois AFK (secondes). -1 = désactiver le kick AFK (mode Deepstone)
+  kick-seconds: 1200
+
+  # Message de kick (codes couleurs avec &)
+  kick-message: "§7[§c!&7] Kick: AFK trop longtemps."

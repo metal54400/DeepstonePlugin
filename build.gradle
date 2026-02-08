@@ -12,10 +12,16 @@ repositories {
         name = "papermc-repo"
         url = "https://repo.papermc.io/repository/maven-public/"
     }
+    maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+    maven { url = 'https://repo.essentialsx.net/releases/' }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT")
+    compileOnly "me.clip:placeholderapi:2.11.6"
+
+    // EssentialsX (pour lire l'état AFK)
+    compileOnly "net.essentialsx:EssentialsX:2.20.1"
 }
 
 tasks {

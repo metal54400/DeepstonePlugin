@@ -15,7 +15,7 @@ public class CommandBlockListener implements Listener {
         if (cmd.equals("/pl") || cmd.equals("/plugins")) {
             if (!player.hasPermission("deepstone.pl")) {
                 event.setCancelled(true);
-                player.sendMessage("§7[§c!&7] §fTu n'as pas la permission d'exécuter cette commande.");
+                player.sendMessage("§7[§c!§7] §fTu n'as pas la permission d'exécuter cette commande.");
             }
         }
     }
