@@ -1,5 +1,5 @@
 name: Deepstone
-version: '0.3'
+version: '0.4'
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
 authors: [ Deepstone-Studio ]
@@ -27,5 +27,8 @@ permissions:
 
   deepstone.afk.kickexempt:
     description: Immunisé contre l'auto-kick AFK via DeepstoneAFK (mode sans Essentials).
+    default: op
+  deepstone.rembourse:
+    description: Permissions modérateur
     default: op
 

@@ -15,3 +15,6 @@ afk:
 
   # Message de kick (codes couleurs avec &)
   kick-message: "§7[§c!&7] Kick: AFK trop longtemps."
+
+addLoreOnCreative: true
+loreitem: "&7Remboursé par &b{staff}"

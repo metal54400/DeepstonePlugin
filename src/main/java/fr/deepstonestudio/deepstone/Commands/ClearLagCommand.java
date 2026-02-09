@@ -27,7 +27,7 @@ public class ClearLagCommand implements CommandExecutor {
         }
 
         int removed = clearService.clearGroundItems();
-        Msg.broadcast("§a" + removed + " items ont été supprimés.");
+        Msg.broadcast("&7[&e?&7]" + removed + " items ont été supprimés.");
         return true;
     }
 }

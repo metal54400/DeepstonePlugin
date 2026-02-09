@@ -28,15 +28,15 @@ public class ProtectionManager {
     public void grant(Player p) {
         long until = System.currentTimeMillis() + protectionMs;
         protectedUntil.put(p.getUniqueId(), until);
-        p.sendMessage(ChatColor.GREEN + "§7[§e?&7] Protection anti-TPKill activée pendant 15 minutes.");
+        p.sendMessage(ChatColor.GREEN + "§7[§e?§7] Protection anti-TPKill activée pendant 15 minutes.");
     }
 
     public void remove(Player p, String reason) {
         if (protectedUntil.remove(p.getUniqueId()) != null) {
             if (reason == null || reason.isEmpty()) {
-                p.sendMessage(ChatColor.YELLOW + "§7[§c!&7] Protection anti-TPKill retirée.");
+                p.sendMessage(ChatColor.YELLOW + "§7[§c!§7] Protection anti-TPKill retirée.");
             } else {
-                p.sendMessage(ChatColor.YELLOW + "§7[§c!&7] Protection anti-TPKill retirée (" + reason + ").");
+                p.sendMessage(ChatColor.YELLOW + "§7[§c!§7] Protection anti-TPKill retirée (" + reason + ").");
             }
         }
     }

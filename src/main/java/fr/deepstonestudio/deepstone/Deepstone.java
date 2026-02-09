@@ -1,9 +1,7 @@
 package fr.deepstonestudio.deepstone;
 
 import fr.deepstonestudio.deepstone.Commands.ClearLagCommand;
-import fr.deepstonestudio.deepstone.Listener.CommandBlockListener;
-import fr.deepstonestudio.deepstone.Listener.PvpListener;
-import fr.deepstonestudio.deepstone.Listener.TeleportListener;
+import fr.deepstonestudio.deepstone.Listener.*;
 import fr.deepstonestudio.deepstone.Manager.ProtectionManager;
 import fr.deepstonestudio.deepstone.api.AFK.AfkService;
 import fr.deepstonestudio.deepstone.api.AFK.Listener.PlayerActivityListener;
@@ -22,6 +20,7 @@ public final class Deepstone extends JavaPlugin {
     private ProtectionManager protectionManager;
     private EssentialsHook essentialsHook;
     private AfkService afkService;
+    public static Deepstone instance;
 
     @Override
     public void onEnable() {
@@ -32,6 +31,18 @@ public final class Deepstone extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(
                 new CommandBlockListener(), this
+        );
+        getServer().getPluginManager().registerEvents(
+                new VillagerTradeLimiter(), this
+        );
+        getServer().getPluginManager().registerEvents(
+                new RaidListener(), this
+        );
+        getServer().getPluginManager().registerEvents(
+                new TradeHours(), this
+        );
+        getServer().getPluginManager().registerEvents(
+                new CreativeItemLoreListener(this), this
         );
         getServer().getPluginManager().registerEvents(
                 new TeleportListener(protectionManager, 2.5), this
@@ -88,6 +99,7 @@ public final class Deepstone extends JavaPlugin {
         } else {
             getLogger().info("PlaceholderAPI non présent: aucun placeholder enregistré.");
         }
+        instance = this;
 
         getLogger().info("Deepstone activé !");
         getLogger().info("Deepstone ClearLagg activé !");
@@ -104,5 +116,8 @@ public final class Deepstone extends JavaPlugin {
 
     public ProtectionManager getProtectionManager() {
         return protectionManager;
+    }
+    public static Deepstone getInstance() {
+        return instance;
     }
 }
