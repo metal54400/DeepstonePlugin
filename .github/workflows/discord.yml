@@ -1,25 +1,19 @@
-name: Discord updates
+name: Annonce update plugin
 
 on:
-  push:
-    branches: ["main", "master"]
   release:
     types: [published]
 
 jobs:
-  notify:
+  announce:
     runs-on: ubuntu-latest
     steps:
-      - name: Send message to Discord
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Envoyer l'annonce Discord
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            MSG="📦 Nouvelle release: **${{ github.event.release.name }}**\n${{ github.event.release.html_url }}"
-          else
-            MSG="✅ Push sur **${{ github.repository }}** par **${{ github.actor }}**\n🔗 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
-          fi
+          VERSION="${{ github.event.release.tag_name }}"
+          URL="${{ github.event.release.html_url }}"
+          CHANGELOG="${{ github.event.release.body }}"
 
           curl -H "Content-Type: application/json" \
-               -d "$(jq -n --arg content "$MSG" '{content: $content}')" \
-               "$DISCORD_WEBHOOK"
+               -d "$(jq -n --arg content "📢 **Nouvelle mise à jour du plugin DeepstonePlugin**\n\n🧩 Version : $VERSION\n📝 Changelog :\n$CHANGELOG\n\n🔗 $URL" '{content: $content}')" \
+               "https://discord.com/api/webhooks/1470481645449510946/46pIUNdqayUcEzrANvUyFhyuWXuJaetAfywveyr1mTScLOF762-oWoe3Ye-tk40GCihO"
