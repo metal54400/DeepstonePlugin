@@ -10,10 +10,19 @@ jobs:
     steps:
       - name: Envoyer l'annonce Discord
         run: |
+          WEBHOOK_URL="https://discord.com/api/webhooks/1470481645449510946/46pIUNdqayUcEzrANvUyFhyuWXuJaetAfywveyr1mTScLOF762-oWoe3Ye-tk40GCihO"
+
           VERSION="${{ github.event.release.tag_name }}"
           URL="${{ github.event.release.html_url }}"
           CHANGELOG="${{ github.event.release.body }}"
 
+          # Si le changelog est vide, évite un message moche
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="(pas de détails)"
+          fi
+
+          PAYLOAD=$(jq -n --arg content "📢 **Nouvelle mise à jour du plugin DeepstonePlugin**\n\n🧩 Version : $VERSION\n📝 Changelog :\n$CHANGELOG\n\n🔗 $URL" '{content: $content}')
+
           curl -H "Content-Type: application/json" \
-               -d "$(jq -n --arg content "📢 **Nouvelle mise à jour du plugin DeepstonePlugin**\n\n🧩 Version : $VERSION\n📝 Changelog :\n$CHANGELOG\n\n🔗 $URL" '{content: $content}')" \
-               "https://discord.com/api/webhooks/1470481645449510946/46pIUNdqayUcEzrANvUyFhyuWXuJaetAfywveyr1mTScLOF762-oWoe3Ye-tk40GCihO"
+               -d "$PAYLOAD" \
+               "$WEBHOOK_URL"
