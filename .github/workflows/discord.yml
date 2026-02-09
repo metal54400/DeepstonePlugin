@@ -1,0 +1,25 @@
+name: Discord updates
+
+on:
+  push:
+    branches: ["main", "master"]
+  release:
+    types: [published]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send message to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            MSG="📦 Nouvelle release: **${{ github.event.release.name }}**\n${{ github.event.release.html_url }}"
+          else
+            MSG="✅ Push sur **${{ github.repository }}** par **${{ github.actor }}**\n🔗 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+          fi
+
+          curl -H "Content-Type: application/json" \
+               -d "$(jq -n --arg content "$MSG" '{content: $content}')" \
+               "$DISCORD_WEBHOOK"
