@@ -18,98 +18,109 @@ public final class Deepstone extends JavaPlugin {
     private ClearService clearService;
     private ClearLoop clearLoop;
     private ProtectionManager protectionManager;
-    private EssentialsHook essentialsHook;
+
+    private EssentialsHook essentialsHook; // champ (pas variable locale)
     private AfkService afkService;
+
     public static Deepstone instance;
 
     @Override
     public void onEnable() {
+        instance = this;
 
-        this.protectionManager = new ProtectionManager(this, 15 * 60); // 15 minutes en secondes
-
+        // ===== Tes autres systèmes =====
+        this.protectionManager = new ProtectionManager(this, 15 * 60);
         protectionManager.startCleanupTask();
 
-        getServer().getPluginManager().registerEvents(
-                new CommandBlockListener(), this
-        );
-        getServer().getPluginManager().registerEvents(
-                new VillagerTradeLimiter(), this
-        );
-        getServer().getPluginManager().registerEvents(
-                new RaidListener(), this
-        );
-        getServer().getPluginManager().registerEvents(
-                new TradeHours(), this
-        );
-        getServer().getPluginManager().registerEvents(
-                new CreativeItemLoreListener(this), this
-        );
-        getServer().getPluginManager().registerEvents(
-                new TeleportListener(protectionManager, 2.5), this
-        );
-        getServer().getPluginManager().registerEvents(
-                new PvpListener(protectionManager), this
-        );
+        getServer().getPluginManager().registerEvents(new CommandBlockListener(), this);
+        getServer().getPluginManager().registerEvents(new VillagerTradeLimiter(), this);
+        getServer().getPluginManager().registerEvents(new RaidListener(), this);
+        getServer().getPluginManager().registerEvents(new TradeHours(), this);
+        getServer().getPluginManager().registerEvents(new CreativeItemLoreListener(this), this);
+        getServer().getPluginManager().registerEvents(new TeleportListener(protectionManager, 2.5), this);
+        getServer().getPluginManager().registerEvents(new PvpListener(protectionManager), this);
 
-
-        // Plugin startup logic
         saveDefaultConfig();
 
         this.clearService = new ClearService(this);
         this.clearLoop = new ClearLoop(this, clearService);
-
-        getCommand("clearlag").setExecutor(new ClearLagCommand(clearService));
-
-        // Démarre la boucle
+        if (getCommand("clearlag") != null) {
+            getCommand("clearlag").setExecutor(new ClearLagCommand(clearService));
+        }
         clearLoop.start();
 
-        EssentialsHook essentialsHook = null;
+        // ===============================
+        //           AFK SETUP
+        // ===============================
+
+        // Config "classique"
+        long autoAfk = getConfig().getLong("auto-afk", 300L);
+        long autoAfkKick = getConfig().getLong("auto-afk-kick", 1200L);
+
+        boolean cancelOnMove = getConfig().getBoolean("cancel-afk-on-move", true);
+        boolean cancelOnChat = getConfig().getBoolean("cancel-afk-on-chat", true);
+        boolean cancelOnInteract = getConfig().getBoolean("cancel-afk-on-interact", true);
+
+        boolean broadcast = getConfig().getBoolean("broadcast-afk-message", true);
+
+        String afkSuffix = getConfig().getString("afk-suffix", "&7[AFK]");
+        String msgNowAfk = getConfig().getString("message-now-afk", "&e{PLAYER} &7est maintenant " + afkSuffix);
+        String msgNoLonger = getConfig().getString("message-no-longer-afk", "&e{PLAYER} &7n'est plus AFK");
+        String kickMessage = getConfig().getString("kick-message", "&cKick: AFK trop longtemps.");
+
+        // Hook Essentials (optionnel)
         Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
         if (essentials != null && essentials.isEnabled()) {
-            essentialsHook = EssentialsHook.tryCreate(essentials);
-            if (essentialsHook != null) {
-                getLogger().info("Hook Essentials: OK (statut AFK géré par Essentials)");
+            this.essentialsHook = EssentialsHook.tryCreate(essentials);
+            if (this.essentialsHook != null) {
+                getLogger().info("Hook Essentials: OK (Deepstone n'active pas son AFK interne).");
             } else {
                 getLogger().warning("Essentials détecté mais hook impossible (version incompatible ?).");
             }
         } else {
-            getLogger().info("Essentials non présent: AFK + kick gérés par DeepstoneAFK.");
+            getLogger().info("Essentials non présent: AFK + kick gérés par Deepstone.");
         }
 
-        // Si Essentials absent -> on active le système AFK interne
-        if (essentialsHook == null) {
-            long afkTimeout = getConfig().getLong("afk.timeout-seconds", 300L);
-            long kickSeconds = getConfig().getLong("afk.kick-seconds", 1200L);
-            String kickMessage = getConfig().getString("afk.kick-message", "&cKick: AFK trop longtemps.");
+        boolean useInternalAfk = (this.essentialsHook == null);
 
-            this.afkService = new AfkService(this, afkTimeout, kickSeconds, kickMessage);
+        // Création du service AFK
+        // Si Essentials présent -> on désactive le timer interne (-1 / -1)
+        this.afkService = new AfkService(
+                this,
+                useInternalAfk ? autoAfk : -1,
+                useInternalAfk ? autoAfkKick : -1,
+                kickMessage,
+                true,          // messagesEnabled
+                broadcast,      // broadcastMessages
+                msgNowAfk,
+                msgNoLonger
+        );
 
-            getServer().getPluginManager().registerEvents(new PlayerActivityListener(afkService), this);
-            afkService.start();
-        } else {
-            // On garde un service "vide" (utile pour placeholder fallback éventuel)
-            this.afkService = new AfkService(this, -1, -1, "§6AFK");
+        // Listener activité + timer seulement si Essentials absent
+        if (useInternalAfk) {
+            Bukkit.getPluginManager().registerEvents(
+                    new PlayerActivityListener(this.afkService, cancelOnMove, cancelOnChat, cancelOnInteract),
+                    this
+            );
+            this.afkService.start();
         }
 
         // Hook PlaceholderAPI (optionnel)
         Plugin papi = Bukkit.getPluginManager().getPlugin("PlaceholderAPI");
         if (papi != null && papi.isEnabled()) {
-            new DeepstoneAfkExpansion(this, afkService, essentialsHook).register();
+            new DeepstoneAfkExpansion(this, this.afkService, this.essentialsHook).register();
             getLogger().info("PlaceholderAPI détecté: %deepstone_afk% enregistré.");
         } else {
             getLogger().info("PlaceholderAPI non présent: aucun placeholder enregistré.");
         }
-        instance = this;
 
         getLogger().info("Deepstone activé !");
         getLogger().info("Deepstone ClearLagg activé !");
         getLogger().info("Deepstone AFK activé !");
-
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
         if (clearLoop != null) clearLoop.stop();
         if (afkService != null) afkService.stop();
     }
@@ -117,6 +128,7 @@ public final class Deepstone extends JavaPlugin {
     public ProtectionManager getProtectionManager() {
         return protectionManager;
     }
+
     public static Deepstone getInstance() {
         return instance;
     }

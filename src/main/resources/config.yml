@@ -1,26 +1,73 @@
+# =====================================================
+#                    Deepstone
+# =====================================================
+# Configuration principale du plugin
+# =====================================================
+
+
+# =====================================================
+#                CLEAR LAG / ITEMS
+# =====================================================
+
+# Intervalle entre chaque nettoyage (en secondes)
 interval-seconds: 300
+
+# Messages d’avertissement avant le nettoyage
 warnings:
   - time: 60
-    message: "§7[§c!&7] Nettoyage des items dans &c60 &7secondes!"
+    message: "&7[&c!&7] Nettoyage des items dans &c60 &7secondes !"
   - time: 10
-    message: "§7[§c!&7] Nettoyage des items dans &c10 &7secondes!"
-done-message: "§7[§e?&7] {count} &aitems ont été supprimés."
+    message: "&7[&c!&7] Nettoyage des items dans &c10 &7secondes !"
+
+# Message après le nettoyage
+# {count} = nombre d’items supprimés
+done-message: "&7[&e?&7] &a{count} &aitems ont été supprimés."
 
 
-messages:
+# =====================================================
+#                      AFK
+# =====================================================
+
+afk:
+  # Temps avant de passer AFK (en secondes)
+  # -1 = désactiver l’AFK automatique
+  auto-afk: 300
+
+  # Temps avant kick une fois AFK (en secondes)
+  # -1 = désactiver le kick AFK
+  auto-afk-kick: 1200
+
+  # Message de kick AFK
+  kick-message: "&7[&c!&7] &cKick : AFK trop longtemps."
+
+  # Annulation du statut AFK
+  cancel-on-move: true
+  cancel-on-chat: true
+  cancel-on-interact: true
+
+  # Messages AFK
+  messages:
     enabled: true
 
-    # true = message à tout le serveur, false = seulement au joueur
+    # true = message à tout le serveur
+    # false = message uniquement au joueur
     broadcast: true
 
-    # message quand le joueur passe AFK
+    # {PLAYER} = nom du joueur
     now-afk: "&e{PLAYER} &7est maintenant &7[AFK]"
-
-    # message quand le joueur revient
     no-longer-afk: "&e{PLAYER} &7n'est plus AFK"
 
-  # Message de kick (codes couleurs avec &)
-kick-message: "§7[§c!&7] Kick: AFK trop longtemps."
+  # Suffix affiché dans le TAB (via PlaceholderAPI)
+  suffix: "&7[AFK]"
 
+
+# =====================================================
+#                CREATIVE / ITEMS
+# =====================================================
+
+# Ajoute un lore automatiquement sur les items pris en créatif
 addLoreOnCreative: true
+
+# Lore ajouté
+# {staff} = nom du membre du staff
 loreitem: "&7Remboursé par &b{staff}"
