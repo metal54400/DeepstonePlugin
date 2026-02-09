@@ -21,7 +21,10 @@ jobs:
             COMMIT_MSG="${{ github.event.head_commit.message }}"
             COMMIT_URL="${{ github.event.head_commit.url }}"
 
-            CONTENT="🔧 **Nouveau commit sur DeepstonePlugin**\n👤 $AUTHOR\n📝 $COMMIT_MSG\n🔗 $COMMIT_URL"
+            CONTENT="🔧 **Nouveau commit sur DeepstonePlugin**
+          👤 $AUTHOR
+          📝 $COMMIT_MSG
+          🔗 $COMMIT_URL"
           fi
 
           if [ "${{ github.event_name }}" = "release" ]; then
@@ -33,7 +36,10 @@ jobs:
               CHANGELOG=\"(pas de détails)\"
             fi
 
-            CONTENT="📢 **Nouvelle mise à jour du plugin DeepstonePlugin**\n\n🧩 Version : $VERSION\n📝 Changelog :\n$CHANGELOG\n\n🔗 $URL"
+            CONTENT="📢 **Nouvelle mise à jour du plugin DeepstonePlugin**
+          🧩 Version : $VERSION
+          📝 Changelog :$CHANGELOG
+          🔗 $URL"
           fi
 
           PAYLOAD=$(jq -n --arg content "$CONTENT" '{content: $content}')
