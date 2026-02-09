@@ -1,27 +1,42 @@
-name: Annonce update plugin
+name: Discord annonces
 
 on:
+  push:
+    branches:
+      - main
+      - master
   release:
     types: [published]
 
 jobs:
-  announce:
+  discord:
     runs-on: ubuntu-latest
     steps:
-      - name: Envoyer l'annonce Discord
+      - name: Envoyer message Discord
         run: |
           WEBHOOK_URL="https://discord.com/api/webhooks/1470481645449510946/46pIUNdqayUcEzrANvUyFhyuWXuJaetAfywveyr1mTScLOF762-oWoe3Ye-tk40GCihO"
 
-          VERSION="${{ github.event.release.tag_name }}"
-          URL="${{ github.event.release.html_url }}"
-          CHANGELOG="${{ github.event.release.body }}"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            AUTHOR="${{ github.actor }}"
+            COMMIT_MSG="${{ github.event.head_commit.message }}"
+            COMMIT_URL="${{ github.event.head_commit.url }}"
 
-          # Si le changelog est vide, évite un message moche
-          if [ -z "$CHANGELOG" ]; then
-            CHANGELOG="(pas de détails)"
+            CONTENT="🔧 **Nouveau commit sur DeepstonePlugin**\n👤 $AUTHOR\n📝 $COMMIT_MSG\n🔗 $COMMIT_URL"
           fi
 
-          PAYLOAD=$(jq -n --arg content "📢 **Nouvelle mise à jour du plugin DeepstonePlugin**\n\n🧩 Version : $VERSION\n📝 Changelog :\n$CHANGELOG\n\n🔗 $URL" '{content: $content}')
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            URL="${{ github.event.release.html_url }}"
+            CHANGELOG="${{ github.event.release.body }}"
+
+            if [ -z \"$CHANGELOG\" ]; then
+              CHANGELOG=\"(pas de détails)\"
+            fi
+
+            CONTENT="📢 **Nouvelle mise à jour du plugin DeepstonePlugin**\n\n🧩 Version : $VERSION\n📝 Changelog :\n$CHANGELOG\n\n🔗 $URL"
+          fi
+
+          PAYLOAD=$(jq -n --arg content "$CONTENT" '{content: $content}')
 
           curl -H "Content-Type: application/json" \
                -d "$PAYLOAD" \
