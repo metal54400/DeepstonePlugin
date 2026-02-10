@@ -20,28 +20,32 @@ jobs:
             COMMIT_MSG="${{ github.event.head_commit.message }}"
             COMMIT_URL="${{ github.event.head_commit.url }}"
 
-            CONTENT="🔧 **Nouveau commit sur DeepstonePlugin**
-👤 $AUTHOR
-📝 $COMMIT_MSG
-🔗 $COMMIT_URL"
-          fi
-
-          if [ "${{ github.event_name }}" = "release" ]; then
-            VERSION="${{ github.event.release.tag_name }}"
-            URL="${{ github.event.release.html_url }}"
-            CHANGELOG="${{ github.event.release.body }}"
-
-            if [ -z "$CHANGELOG" ]; then
-              CHANGELOG="(pas de détails)"
-            fi
-
-            CONTENT="📢 **Nouvelle mise à jour du plugin DeepstonePlugin**"
-
-            "🧩 Version : $VERSION"
-            "📝 Changelog :$CHANGELOG"
-
-            🔗 $URL"
-            fi
+            CONTENT=$(cat <<EOF🔧 **Nouveau commit sur DeepstonePlugin**/n
+                                👤 $AUTHOR
+                                📝 $COMMIT_MSG
+                                🔗 $COMMIT_URL
+                                EOF
+                                )
+                                          fi
+                                
+                                          if [ "${{ github.event_name }}" = "release" ]; then
+                                            VERSION="${{ github.event.release.tag_name }}"
+                                            URL="${{ github.event.release.html_url }}"
+                                            CHANGELOG="${{ github.event.release.body }}"
+                                
+                                            [ -z "$CHANGELOG" ] && CHANGELOG="(pas de détails)"
+                                
+                                            CONTENT=$(cat <<EOF
+                                📢 **Nouvelle mise à jour du plugin DeepstonePlugin**
+                                
+                                🧩 Version : $VERSION
+                                📝 Changelog :
+                                $CHANGELOG
+                                
+                                🔗 $URL
+                                EOF
+                                )
+                  fi
 
           PAYLOAD=$(jq -n --arg content "$CONTENT" '{content: $content}')
 
