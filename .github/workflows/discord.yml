@@ -2,9 +2,7 @@ name: Discord annonces
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: ["main", "master"]
   release:
     types: [published]
 
@@ -13,18 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Envoyer message Discord
+        shell: bash
         run: |
-          WEBHOOK_URL="https://discord.com/api/webhooks/1470481645449510946/46pIUNdqayUcEzrANvUyFhyuWXuJaetAfywveyr1mTScLOF762-oWoe3Ye-tk40GCihO"
+          WEBHOOK_URL="https://discord.com/api/webhooks/TON_ID/TON_TOKEN"
 
           if [ "${{ github.event_name }}" = "push" ]; then
             AUTHOR="${{ github.actor }}"
             COMMIT_MSG="${{ github.event.head_commit.message }}"
             COMMIT_URL="${{ github.event.head_commit.url }}"
 
-            CONTENT="🔧 **Nouveau commit sur DeepstonePlugin**
-          👤 $AUTHOR
-          📝 $COMMIT_MSG
-          🔗 $COMMIT_URL"
+            # $'...' transforme \n en VRAI saut de ligne
+            CONTENT=$'🔧 **Nouveau commit sur DeepstonePlugin**\n'
+            CONTENT+=$'👤 '"$AUTHOR"$'\n'
+            CONTENT+=$'📝 '"$COMMIT_MSG"$'\n'
+            CONTENT+=$'🔗 '"$COMMIT_URL"
           fi
 
           if [ "${{ github.event_name }}" = "release" ]; then
@@ -32,18 +32,18 @@ jobs:
             URL="${{ github.event.release.html_url }}"
             CHANGELOG="${{ github.event.release.body }}"
 
-            if [ -z \"$CHANGELOG\" ]; then
-              CHANGELOG=\"(pas de détails)\"
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG="(pas de détails)"
             fi
 
-            CONTENT="📢 **Nouvelle mise à jour du plugin DeepstonePlugin**
-          🧩 Version : $VERSION
-          📝 Changelog :$CHANGELOG
-          🔗 $URL"
+            CONTENT=$'📢 **Nouvelle mise à jour du plugin DeepstonePlugin**\n\n'
+            CONTENT+=$'🧩 Version : '"$VERSION"$'\n'
+            CONTENT+=$'📝 Changelog :\n'"$CHANGELOG"$'\n\n'
+            CONTENT+=$'🔗 '"$URL"
           fi
 
           PAYLOAD=$(jq -n --arg content "$CONTENT" '{content: $content}')
 
           curl -H "Content-Type: application/json" \
                -d "$PAYLOAD" \
-               "$WEBHOOK_URL"
+               "$WEBHOOK_URL
