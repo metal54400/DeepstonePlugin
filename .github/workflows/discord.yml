@@ -13,7 +13,7 @@ jobs:
       - name: Envoyer message Discord
         shell: bash
         run: |
-          WEBHOOK_URL="https://discord.com/api/webhooks/TON_ID/TON_TOKEN"
+          WEBHOOK_URL="https://discord.com/api/webhooks/1470481645449510946/46pIUNdqayUcEzrANvUyFhyuWXuJaetAfywveyr1mTScLOF762-oWoe3Ye-tk40GCihO"
 
           if [ "${{ github.event_name }}" = "push" ]; then
             AUTHOR="${{ github.actor }}"
