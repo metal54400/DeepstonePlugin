@@ -8,6 +8,8 @@ softdepend:
   - Essentials
 
 commands:
+  war:
+    description: Système de guerre
   clan:
     description: Gestion des clans Deepstone
     usage: /clan help
