@@ -21,32 +21,32 @@ public class WarCommand implements CommandExecutor {
         if (!(sender instanceof Player player)) return true;
 
         if (args.length < 1) {
-            player.sendMessage("§c/war <declare|accept> <clan>");
+            player.sendMessage("§7[§e?§7] §c/war <declare|accept> <clan>");
             return true;
         }
 
         var clan = clans.getClanOf(player.getUniqueId());
         if (clan == null) {
-            player.sendMessage("§cTu n'as pas de clan.");
+            player.sendMessage("§7[§e?§7] §cTu n'as pas de clan.");
             return true;
         }
 
         if (args[0].equalsIgnoreCase("declare")) {
 
             if (args.length < 2) {
-                player.sendMessage("§c/war declare <clan>");
+                player.sendMessage("§7[§e?§7] §c/war declare <clan>");
                 return true;
             }
 
             var target = clans.getClanByName(args[1]);
             if (target == null) {
-                player.sendMessage("§cClan introuvable.");
+                player.sendMessage("§7[§e?§7] §cClan introuvable.");
                 return true;
             }
 
             wars.declare(clan.getName(), target.getName());
 
-            player.getServer().broadcastMessage("&7[§e?&7] §6"
+            player.getServer().broadcastMessage("§7[§e?§7] §6"
                     + clan.getDisplayName()
                     + " déclare la guerre à "
                     + target.getDisplayName());
@@ -55,11 +55,11 @@ public class WarCommand implements CommandExecutor {
 
             var war = wars.accept(clan.getName());
             if (war == null) {
-                player.sendMessage("&7[§c!&7] Aucune guerre en attente.");
+                player.sendMessage("§7[§c!§7] Aucune guerre en attente.");
                 return true;
             }
 
-            player.getServer().broadcastMessage("&7[§c!&7] La guerre commence !");
+            player.getServer().broadcastMessage("§7[§c!§7] La guerre commence !");
         }
 
         return true;

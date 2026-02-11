@@ -1,11 +1,12 @@
 name: Deepstone
-version: '0.9'
+version: '0.10'
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
-authors: [ Deepstone-Studio ]
+authors: 'Deepstone-Studio, metal54400_ '
 softdepend:
   - PlaceholderAPI
   - Essentials
+  - Vault
 
 commands:
   war:

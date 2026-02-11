@@ -1,6 +1,7 @@
 package fr.deepstonestudio.deepstone;
 
 import fr.deepstonestudio.deepstone.Commands.ClanCommand;import fr.deepstonestudio.deepstone.Commands.ClearLagCommand;
+import fr.deepstonestudio.deepstone.Commands.PriereCommand;
 import fr.deepstonestudio.deepstone.Commands.WarCommand;
 import fr.deepstonestudio.deepstone.Listener.*;
 import fr.deepstonestudio.deepstone.Manager.ProtectionManager;
@@ -10,9 +11,15 @@ import fr.deepstonestudio.deepstone.api.DeepstoneAfkExpansion;
 import fr.deepstonestudio.deepstone.api.EssentialsHook;
 import fr.deepstonestudio.deepstone.storage.YamlStore;
 import fr.deepstonestudio.deepstone.util.*;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public final class Deepstone extends JavaPlugin {
 
@@ -24,11 +31,14 @@ public final class Deepstone extends JavaPlugin {
     private AfkService afkService;
     private ClanService clans;
     public static Deepstone instance;
+    private Economy economy; // peut rester null
+    private final Map<UUID, Long> sacrificeMap = new HashMap<>();
+
 
     @Override
     public void onEnable() {
         instance = this;
-
+        economy = setupEconomy();
         this.protectionManager = new ProtectionManager(this, 15 * 60);
         protectionManager.startCleanupTask();
         saveDefaultConfig();
@@ -67,6 +77,15 @@ public final class Deepstone extends JavaPlugin {
         } else {
             getLogger().severe("Commande /war manquante dans plugin.yml");
         }
+        getCommand("priere").setExecutor(new PriereCommand(economy, sacrificeMap));
+        getServer().getPluginManager().registerEvents(new SacrificeListener(sacrificeMap), this);
+
+        if (economy == null) {
+            getLogger().warning("Vault/economy non trouvé -> fallback activé: la récompense € sera remplacée par 10 lingots de fer.");
+        } else {
+            getLogger().info("Vault economy détectée -> récompense € active.");
+        }
+
 
         // ===== Events =====
         getServer().getPluginManager().registerEvents(new CommandBlockListener(), this);
@@ -157,6 +176,16 @@ public final class Deepstone extends JavaPlugin {
         getLogger().info("DeepstoneClans activé.");
         getLogger().info("Deepstone ClearLagg activé !");
         getLogger().info("Deepstone AFK activé !");
+    }
+
+    private Economy setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) return null;
+
+        RegisteredServiceProvider<Economy> rsp =
+                getServer().getServicesManager().getRegistration(Economy.class);
+
+        if (rsp == null) return null;
+        return rsp.getProvider();
     }
 
     @Override
