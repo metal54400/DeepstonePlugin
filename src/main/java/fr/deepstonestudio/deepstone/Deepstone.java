@@ -29,35 +29,46 @@ public final class Deepstone extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
-        // ===== Tes autres systèmes =====
         this.protectionManager = new ProtectionManager(this, 15 * 60);
         protectionManager.startCleanupTask();
         saveDefaultConfig();
+
         WarService warService = new WarService();
         GloryService gloryService = new GloryService(this);
+
         this.clearService = new ClearService(this);
         this.clearLoop = new ClearLoop(this, clearService);
+
         var store = new YamlStore(this);
         this.clans = new ClanService(store);
 
-        // Load data
         try {
-            clans.loadAll();
+            this.clans.loadAll();
         } catch (Exception e) {
             getLogger().severe("Failed to load clans: " + e.getMessage());
             e.printStackTrace();
         }
 
+        // ===== Commands =====
         if (getCommand("clearlag") != null) {
             getCommand("clearlag").setExecutor(new ClearLagCommand(clearService));
         }
-        var cmd = new ClanCommand(clans);
-        getCommand("clan").setExecutor(cmd);
-        getCommand("clan").setTabCompleter(cmd);
-        getCommand("war").setExecutor(
-                new WarCommand(clans, warService)
-        );
 
+        if (getCommand("clan") != null) {
+            ClanCommand cmd = new ClanCommand(this.clans);
+            getCommand("clan").setExecutor(cmd);
+            getCommand("clan").setTabCompleter(cmd);
+        } else {
+            getLogger().severe("Commande /clan manquante dans plugin.yml");
+        }
+
+        if (getCommand("war") != null) {
+            getCommand("war").setExecutor(new WarCommand(this.clans, warService));
+        } else {
+            getLogger().severe("Commande /war manquante dans plugin.yml");
+        }
+
+        // ===== Events =====
         getServer().getPluginManager().registerEvents(new CommandBlockListener(), this);
         getServer().getPluginManager().registerEvents(new VillagerTradeLimiter(), this);
         getServer().getPluginManager().registerEvents(new RaidListener(), this);
@@ -65,7 +76,12 @@ public final class Deepstone extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CreativeItemLoreListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportListener(protectionManager, 2.5), this);
         getServer().getPluginManager().registerEvents(new PvpListener(protectionManager), this);
-        getServer().getPluginManager().registerEvents(new WarListener(clans, warService, gloryService), this);
+
+        // IMPORTANT: on passe la même instance de ClanService + war + glory
+        getServer().getPluginManager().registerEvents(
+                new WarListener(this.clans, warService, gloryService),
+                this
+        );
 
         clearLoop.start();
 

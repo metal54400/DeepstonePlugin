@@ -53,9 +53,7 @@ public final class ClanService {
         if (hasClan(creator.getUniqueId())) throw new IllegalStateException("Tu es déjà dans un clan.");
 
         Clan c = new Clan(name);
-        c.setKing(creator.getUniqueId());
-        c.setJarl(creator.getUniqueId()); // par défaut, roi = jarl jusqu'à nomination
-        c.addMember(creator.getUniqueId(), Role.KING);
+        c.initFounder(creator.getUniqueId()); // ✅ plus d’erreur
 
         clans.put(c.getName(), c);
         playerClan.put(creator.getUniqueId(), c.getName());
