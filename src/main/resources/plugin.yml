@@ -9,6 +9,8 @@ softdepend:
   - Vault
 
 commands:
+  priere:
+    description: Prier les dieux nordiques
   war:
     description: Système de guerre
   clan:
