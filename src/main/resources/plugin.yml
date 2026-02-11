@@ -1,5 +1,5 @@
 name: Deepstone
-version: '0.5'
+version: '0.8'
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
 authors: [ Deepstone-Studio ]
@@ -8,11 +8,19 @@ softdepend:
   - Essentials
 
 commands:
+  clan:
+    description: Gestion des clans Deepstone
+    usage: /clan help
   clearlag:
     description: Force le nettoyage des items au sol
     usage: /clearlag
 
+
+
 permissions:
+  deepstone.clan.admin:
+    default: op
+
   deepstone.clearlag:
     description: Autorise /clearlag
     default: op

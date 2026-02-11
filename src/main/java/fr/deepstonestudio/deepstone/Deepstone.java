@@ -1,14 +1,15 @@
 package fr.deepstonestudio.deepstone;
 
-import fr.deepstonestudio.deepstone.Commands.ClearLagCommand;
+import fr.deepstonestudio.deepstone.Commands.ClanCommand;import fr.deepstonestudio.deepstone.Commands.ClearLagCommand;
+import fr.deepstonestudio.deepstone.Commands.WarCommand;
 import fr.deepstonestudio.deepstone.Listener.*;
 import fr.deepstonestudio.deepstone.Manager.ProtectionManager;
 import fr.deepstonestudio.deepstone.api.AFK.AfkService;
 import fr.deepstonestudio.deepstone.api.AFK.Listener.PlayerActivityListener;
 import fr.deepstonestudio.deepstone.api.DeepstoneAfkExpansion;
 import fr.deepstonestudio.deepstone.api.EssentialsHook;
-import fr.deepstonestudio.deepstone.util.ClearLoop;
-import fr.deepstonestudio.deepstone.util.ClearService;
+import fr.deepstonestudio.deepstone.storage.YamlStore;
+import fr.deepstonestudio.deepstone.util.*;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,7 +22,7 @@ public final class Deepstone extends JavaPlugin {
 
     private EssentialsHook essentialsHook; // champ (pas variable locale)
     private AfkService afkService;
-
+    private ClanService clans;
     public static Deepstone instance;
 
     @Override
@@ -31,6 +32,31 @@ public final class Deepstone extends JavaPlugin {
         // ===== Tes autres systèmes =====
         this.protectionManager = new ProtectionManager(this, 15 * 60);
         protectionManager.startCleanupTask();
+        saveDefaultConfig();
+        WarService warService = new WarService();
+        GloryService gloryService = new GloryService(this);
+        this.clearService = new ClearService(this);
+        this.clearLoop = new ClearLoop(this, clearService);
+        var store = new YamlStore(this);
+        this.clans = new ClanService(store);
+
+        // Load data
+        try {
+            clans.loadAll();
+        } catch (Exception e) {
+            getLogger().severe("Failed to load clans: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        if (getCommand("clearlag") != null) {
+            getCommand("clearlag").setExecutor(new ClearLagCommand(clearService));
+        }
+        var cmd = new ClanCommand(clans);
+        getCommand("clan").setExecutor(cmd);
+        getCommand("clan").setTabCompleter(cmd);
+        getCommand("war").setExecutor(
+                new WarCommand(clans, warService)
+        );
 
         getServer().getPluginManager().registerEvents(new CommandBlockListener(), this);
         getServer().getPluginManager().registerEvents(new VillagerTradeLimiter(), this);
@@ -39,14 +65,8 @@ public final class Deepstone extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CreativeItemLoreListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportListener(protectionManager, 2.5), this);
         getServer().getPluginManager().registerEvents(new PvpListener(protectionManager), this);
+        getServer().getPluginManager().registerEvents(new WarListener(clans, warService, gloryService), this);
 
-        saveDefaultConfig();
-
-        this.clearService = new ClearService(this);
-        this.clearLoop = new ClearLoop(this, clearService);
-        if (getCommand("clearlag") != null) {
-            getCommand("clearlag").setExecutor(new ClearLagCommand(clearService));
-        }
         clearLoop.start();
 
         // ===============================
@@ -114,7 +134,11 @@ public final class Deepstone extends JavaPlugin {
             getLogger().info("PlaceholderAPI non présent: aucun placeholder enregistré.");
         }
 
+
+
+
         getLogger().info("Deepstone activé !");
+        getLogger().info("DeepstoneClans activé.");
         getLogger().info("Deepstone ClearLagg activé !");
         getLogger().info("Deepstone AFK activé !");
     }
@@ -123,7 +147,15 @@ public final class Deepstone extends JavaPlugin {
     public void onDisable() {
         if (clearLoop != null) clearLoop.stop();
         if (afkService != null) afkService.stop();
+
+        try {
+            clans.saveAll();
+        } catch (Exception e) {
+            getLogger().severe("Failed to save clans: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
+
 
     public ProtectionManager getProtectionManager() {
         return protectionManager;
