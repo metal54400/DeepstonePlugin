@@ -1,5 +1,9 @@
 package fr.deepstonestudio.deepstone.model;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+
 import java.util.*;
 
 public final class Clan {
@@ -13,6 +17,10 @@ public final class Clan {
     private int glory = 0;
 
     private final Map<UUID, Role> members = new HashMap<>();
+
+    // ✅ Diplomatie (ids en lower-case)
+    private final Set<String> allies = new HashSet<>();
+    private final Set<String> truces = new HashSet<>();
 
     public Clan(String name) {
         this.name = name.toLowerCase(Locale.ROOT);
@@ -36,7 +44,42 @@ public final class Clan {
     public Role getRole(UUID uuid) { return members.get(uuid); }
     public int size() { return members.size(); }
 
-    /** ✅ Méthode propre pour créer un clan */
+    // -------------------------
+    // ✅ Diplomatie
+    // -------------------------
+    public Set<String> getAllies() { return allies; }
+    public Set<String> getTruces() { return truces; }
+
+    public boolean isAlliedWith(String otherClanId) {
+        if (otherClanId == null) return false;
+        return allies.contains(otherClanId.toLowerCase(Locale.ROOT));
+    }
+
+    public boolean isTruceWith(String otherClanId) {
+        if (otherClanId == null) return false;
+        return truces.contains(otherClanId.toLowerCase(Locale.ROOT));
+    }
+
+    public void removeRelation(String otherClanId) {
+        String id = otherClanId.toLowerCase(Locale.ROOT);
+        allies.remove(id);
+        truces.remove(id);
+    }
+
+    public void addAlliance(String otherClanId) {
+        String id = otherClanId.toLowerCase(Locale.ROOT);
+        truces.remove(id);
+        allies.add(id);
+    }
+
+    public void addTruce(String otherClanId) {
+        String id = otherClanId.toLowerCase(Locale.ROOT);
+        if (!allies.contains(id)) truces.add(id);
+    }
+
+    // -------------------------
+    // ✅ Création / gestion
+    // -------------------------
     public void initFounder(UUID uuid) {
         members.put(uuid, Role.KING);
         this.king = uuid;
@@ -75,4 +118,43 @@ public final class Clan {
         jarl = uuid;
         members.put(uuid, Role.JARL);
     }
+
+    public static final class Capital {
+        private final String world;
+        private final int x, y, z;
+
+        public Capital(String world, int x, int y, int z) {
+            this.world = world;
+            this.x = x; this.y = y; this.z = z;
+        }
+
+        public String getWorld() { return world; }
+        public int getX() { return x; }
+        public int getY() { return y; }
+        public int getZ() { return z; }
+
+        public Location toLocation() {
+            World w = Bukkit.getWorld(world);
+            if (w == null) return null;
+            return new Location(w, x + 0.5, y, z + 0.5);
+        }
+    }
+
+    private Capital capital;
+
+    public Capital getCapital() { return capital; }
+
+    public void setCapital(Location loc) {
+        if (loc == null || loc.getWorld() == null) {
+            this.capital = null;
+            return;
+        }
+        this.capital = new Capital(
+                loc.getWorld().getName(),
+                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()
+        );
+    }
+
+    public void setCapitalRaw(Capital cap) { this.capital = cap; }
+    public boolean hasCapital() { return capital != null; }
 }

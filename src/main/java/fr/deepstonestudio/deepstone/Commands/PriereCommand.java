@@ -23,32 +23,32 @@ public class PriereCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("Commande uniquement joueur.");
+            sender.sendMessage("§7[§c!§7] Commande uniquement joueur.");
             return true;
         }
 
         if (args.length != 1) {
-            player.sendMessage(ChatColor.RED + "Usage: /priere <thor|odin|loki|freya|frey>");
+            player.sendMessage(ChatColor.RED + "§7[§c!§7] Usage: /priere <thor|odin|loki|freya|frey>");
             return true;
         }
 
         String god = args[0].toLowerCase(Locale.ROOT);
         if (!List.of("thor", "odin", "loki", "freya", "frey").contains(god)) {
-            player.sendMessage(ChatColor.RED + "Dieu invalide.");
+            player.sendMessage(ChatColor.RED + "§7[§c!§7] Dieu invalide.");
             return true;
         }
 
         long now = System.currentTimeMillis();
         Long expire = sacrificeMap.get(player.getUniqueId());
         if (expire == null || expire < now) {
-            player.sendMessage(ChatColor.RED + "Tu dois faire un sacrifice avant de prier.");
+            player.sendMessage(ChatColor.RED + "§7[§c!§7] Tu dois faire un sacrifice avant de prier.");
             return true;
         }
 
         // Consomme le sacrifice
         sacrificeMap.remove(player.getUniqueId());
 
-        player.sendMessage(ChatColor.GOLD + "Tu pries " + god.toUpperCase() + "...");
+        player.sendMessage(ChatColor.GOLD + "§7[§e?§7] Tu pries " + god.toUpperCase() + "...");
         player.getWorld().spawnParticle(Particle.ENCHANT, player.getLocation().add(0, 1, 0), 40);
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_POWER_SELECT, 1f, 1f);
 
@@ -58,18 +58,18 @@ public class PriereCommand implements CommandExecutor {
             case 0 -> { // Argent OU fallback fer
                 if (economy != null) {
                     economy.depositPlayer(player, 100.0);
-                    player.sendMessage(ChatColor.GREEN + "Les dieux te donnent 100€ !");
+                    player.sendMessage(ChatColor.GREEN + "§7[§e?§7] Les dieux te donnent 100€ !");
                 } else {
                     giveIronFallback(player);
-                    player.sendMessage(ChatColor.YELLOW + "Pas d’économie détectée: tu reçois 10 lingots de fer à la place.");
+                    player.sendMessage(ChatColor.YELLOW + "§7[§e?§7] Pas d’économie détectée: tu reçois 10 lingots de fer à la place.");
                 }
             }
             case 1 -> {
                 player.getInventory().addItem(new ItemStack(Material.DIAMOND, 15));
-                player.sendMessage(ChatColor.AQUA + "Les dieux te donnent 15 diamants !");
+                player.sendMessage(ChatColor.AQUA + "§7[§e?§7] Les dieux te donnent 15 diamants !");
             }
             case 2 -> {
-                player.sendMessage(ChatColor.DARK_RED + "Les dieux te condamnent !");
+                player.sendMessage(ChatColor.DARK_RED + "§7[§c!§7] Les dieux te condamnent !");
                 player.getWorld().strikeLightningEffect(player.getLocation());
                 player.setHealth(0.0);
             }

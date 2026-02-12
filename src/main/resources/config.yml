@@ -58,7 +58,7 @@ afk:
     no-longer-afk: "&e{PLAYER} &7n'est plus AFK"
 
   # Suffix affiché dans le TAB (via PlaceholderAPI)
-  suffix: "&7[AFK]"
+  suffix: "&7[&9AFK]"
 
 
 # =====================================================

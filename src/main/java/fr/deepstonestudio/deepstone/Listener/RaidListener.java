@@ -28,7 +28,7 @@ public class RaidListener implements Listener {
                 long lastTime = raidCooldown.get(uuid);
                 if (now - lastTime < ONE_HOUR) {
                     long remainingMinutes = (ONE_HOUR - (now - lastTime)) / 60000;
-                    player.sendMessage("Vous devez attendre encore " + remainingMinutes + " minutes avant de participer à un nouveau raid.");
+                    player.sendMessage("§7[§e?§7] Vous devez attendre encore " + remainingMinutes + " minutes avant de participer à un nouveau raid.");
                     // Ici, tu peux également annuler une récompense si besoin
                     continue;
                 }
@@ -37,7 +37,7 @@ public class RaidListener implements Listener {
             raidCooldown.put(uuid, now);
 
             // Par exemple, donne un totem de vie
-            player.getInventory().addItem(new ItemStack(Material.TOTEM_OF_UNDYING, 1));
+            player.getInventory().addItem(new ItemStack(Material.TOTEM_OF_UNDYING, 2));
         }
     }
 }

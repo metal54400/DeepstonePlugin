@@ -25,7 +25,7 @@ public class TradeHours implements Listener {
         // Autorisé de 07:00 inclus à 19:00 exclus (tu peux ajuster)
         if (hour < START || hour >= END) {
             event.setCancelled(true);
-            Msg.broadcast("&7[§c!&7] Les échanges avec les villageois sont autorisés uniquement de &d07h& à &b19h.");
+            Msg.broadcast("&7[§e?&7] Les échanges avec les villageois sont autorisés uniquement de &d07h& à &b19h.");
         }
     }
 

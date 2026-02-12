@@ -20,7 +20,8 @@ public class SacrificeListener implements Listener {
             EntityType.COW,
             EntityType.SHEEP,
             EntityType.PIG,
-            EntityType.CHICKEN
+            EntityType.CHICKEN,
+            EntityType.PLAYER
     );
 
     public SacrificeListener(Map<UUID, Long> sacrificeMap) {
@@ -37,7 +38,7 @@ public class SacrificeListener implements Listener {
         sacrificeMap.put(player.getUniqueId(),
                 System.currentTimeMillis() + 60000);
 
-        player.sendMessage(ChatColor.DARK_RED + "§7[§c?§7] Sacrifice accepté ! Tu as 60 secondes pour faire /priere.");
+        player.sendMessage(ChatColor.DARK_RED + "§7[§e?§7] Sacrifice accepté ! Tu as 60 secondes pour faire /priere.");
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BELL_USE, 1f, 0.8f);
     }
 }

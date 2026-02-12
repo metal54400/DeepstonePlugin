@@ -37,11 +37,7 @@ public final class YamlStore {
             Clan c = new Clan(sec.getString("display", key));
             c.setDisplayName(sec.getString("display", key));
 
-            String king = sec.getString("king", null);
-            String jarl = sec.getString("jarl", null);
-            if (king != null) c.setKing(UUID.fromString(king));
-            if (jarl != null) c.setJarl(UUID.fromString(jarl));
-
+            // ✅ 1) members d'abord (sinon setKing/setJarl throw)
             var memSec = sec.getConfigurationSection("members");
             if (memSec != null) {
                 for (String uuidStr : memSec.getKeys(false)) {
@@ -50,6 +46,45 @@ public final class YamlStore {
                     c.addMember(u, r);
                 }
             }
+            String cw = sec.getString("capital.world", null);
+            if (cw != null) {
+                int cx = sec.getInt("capital.x");
+                int cy = sec.getInt("capital.y");
+                int cz = sec.getInt("capital.z");
+                c.setCapitalRaw(new Clan.Capital(cw, cx, cy, cz));
+            }
+
+            // ✅ 2) diplomatie
+            for (String a : sec.getStringList("allies")) {
+                if (a != null && !a.isBlank()) c.getAllies().add(a.toLowerCase(Locale.ROOT));
+            }
+            for (String t : sec.getStringList("truces")) {
+                if (t != null && !t.isBlank()) c.getTruces().add(t.toLowerCase(Locale.ROOT));
+            }
+
+            // ✅ 3) king/jarl ensuite
+            String king = sec.getString("king", null);
+            if (king != null) {
+                UUID k = UUID.fromString(king);
+                if (c.isMember(k)) c.setKing(k);
+            }
+
+            String jarl = sec.getString("jarl", null);
+            if (jarl != null) {
+                UUID j = UUID.fromString(jarl);
+                if (c.isMember(j)) c.setJarl(j);
+            }
+
+            // Fallback si fichier ancien ou incohérent
+            if (c.getKing() == null && !c.getMembers().isEmpty()) {
+                UUID any = c.getMembers().keySet().iterator().next();
+                c.addMember(any, Role.KING);
+                c.setKing(any);
+                c.setJarl(any);
+            } else if (c.getJarl() == null && c.getKing() != null) {
+                c.setJarl(c.getKing());
+            }
+
             out.put(c.getName(), c);
         }
         return out;
@@ -62,6 +97,21 @@ public final class YamlStore {
             cfg.set(path + ".display", c.getDisplayName());
             cfg.set(path + ".king", c.getKing() == null ? null : c.getKing().toString());
             cfg.set(path + ".jarl", c.getJarl() == null ? null : c.getJarl().toString());
+
+            // ✅ diplomatie
+            cfg.set(path + ".allies", new ArrayList<>(c.getAllies()));
+            cfg.set(path + ".truces", new ArrayList<>(c.getTruces()));
+
+            // ✅ capitale
+            if (c.getCapital() == null) {
+                cfg.set(path + ".capital", null);
+            } else {
+                cfg.set(path + ".capital.world", c.getCapital().getWorld());
+                cfg.set(path + ".capital.x", c.getCapital().getX());
+                cfg.set(path + ".capital.y", c.getCapital().getY());
+                cfg.set(path + ".capital.z", c.getCapital().getZ());
+            }
+
 
             String memPath = path + ".members";
             for (var e : c.getMembers().entrySet()) {
@@ -90,6 +140,32 @@ public final class YamlStore {
         var cfg = new YamlConfiguration();
         for (var e : index.entrySet()) {
             cfg.set("players." + e.getKey().toString(), e.getValue());
+        }
+        cfg.save(playersFile);
+    }
+    public Map<UUID, Integer> loadMercenaryGlory() throws IOException {
+        if (!playersFile.exists()) playersFile.createNewFile();
+        var cfg = YamlConfiguration.loadConfiguration(playersFile);
+
+        Map<UUID, Integer> out = new HashMap<>();
+        var sec = cfg.getConfigurationSection("mercenary_glory");
+        if (sec == null) return out;
+
+        for (String uuidStr : sec.getKeys(false)) {
+            int v = sec.getInt(uuidStr, 0);
+            out.put(UUID.fromString(uuidStr), Math.max(0, v));
+        }
+        return out;
+    }
+
+    public void saveMercenaryGlory(Map<UUID, Integer> glory) throws IOException {
+        if (!playersFile.exists()) playersFile.createNewFile();
+        var cfg = YamlConfiguration.loadConfiguration(playersFile);
+
+        // réécrit la section
+        cfg.set("mercenary_glory", null);
+        for (var e : glory.entrySet()) {
+            cfg.set("mercenary_glory." + e.getKey().toString(), Math.max(0, e.getValue()));
         }
         cfg.save(playersFile);
     }

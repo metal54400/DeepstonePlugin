@@ -1,10 +1,13 @@
 name: Deepstone
-version: '0.10'
+version: $version
+description: Le plugin c'est lié sur Les Nordique
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
+website: https://deep.deespstone.fr
 authors:
   - Deepstone-Studio
   - metal54400_
+
 softdepend:
   - PlaceholderAPI
   - Essentials
@@ -26,6 +29,7 @@ commands:
 
 permissions:
   deepstone.clan.admin:
+    description: Gestion des clans Deepstone
     default: op
 
   deepstone.clearlag:

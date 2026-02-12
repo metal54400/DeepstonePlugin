@@ -64,11 +64,11 @@ public class WarListener implements Listener {
 
         if (dead.getUniqueId().equals(deadClan.getKing())) {
 
-            Bukkit.broadcastMessage("§cLe ROI de "
+            Bukkit.broadcastMessage("§7[§c!§7] Le ROI de "
                     + deadClan.getDisplayName()
                     + " est tombé !");
 
-            Bukkit.broadcastMessage("§6"
+            Bukkit.broadcastMessage("§7[§e?§7]"
                     + killerClan.getDisplayName()
                     + " remporte la guerre !");
 

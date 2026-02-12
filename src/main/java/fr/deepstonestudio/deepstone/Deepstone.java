@@ -1,9 +1,8 @@
 package fr.deepstonestudio.deepstone;
 
-import fr.deepstonestudio.deepstone.Commands.ClanCommand;import fr.deepstonestudio.deepstone.Commands.ClearLagCommand;
-import fr.deepstonestudio.deepstone.Commands.PriereCommand;
-import fr.deepstonestudio.deepstone.Commands.WarCommand;
+import fr.deepstonestudio.deepstone.Commands.*;
 import fr.deepstonestudio.deepstone.Listener.*;
+import fr.deepstonestudio.deepstone.Manager.CapitalManager;
 import fr.deepstonestudio.deepstone.Manager.ProtectionManager;
 import fr.deepstonestudio.deepstone.api.AFK.AfkService;
 import fr.deepstonestudio.deepstone.api.AFK.Listener.PlayerActivityListener;
@@ -17,6 +16,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -34,7 +34,6 @@ public final class Deepstone extends JavaPlugin {
     private Economy economy; // peut rester null
     private final Map<UUID, Long> sacrificeMap = new HashMap<>();
 
-
     @Override
     public void onEnable() {
         instance = this;
@@ -51,6 +50,12 @@ public final class Deepstone extends JavaPlugin {
 
         var store = new YamlStore(this);
         this.clans = new ClanService(store);
+        MercenaryService mercService = new MercenaryService(clans, store);
+        try {
+            mercService.loadAll();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         try {
             this.clans.loadAll();
@@ -78,7 +83,11 @@ public final class Deepstone extends JavaPlugin {
             getLogger().severe("Commande /war manquante dans plugin.yml");
         }
         getCommand("priere").setExecutor(new PriereCommand(economy, sacrificeMap));
-        getServer().getPluginManager().registerEvents(new SacrificeListener(sacrificeMap), this);
+        MercenaryCommand mercCmd = new MercenaryCommand(mercService);
+        getCommand("mercenary").setExecutor(mercCmd);
+        getCommand("mercenary").setTabCompleter(mercCmd);
+
+
 
         if (economy == null) {
             getLogger().warning("Vault/economy non trouvé -> fallback activé: la récompense € sera remplacée par 10 lingots de fer.");
@@ -95,14 +104,20 @@ public final class Deepstone extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CreativeItemLoreListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportListener(protectionManager, 2.5), this);
         getServer().getPluginManager().registerEvents(new PvpListener(protectionManager), this);
-
+        getServer().getPluginManager().registerEvents(new DeathListener(this), this);
+        getServer().getPluginManager().registerEvents(new ClanFriendlyFireListener(clans,mercService), this);
+        getServer().getPluginManager().registerEvents(new ClanChatListener(this, clans), this);
+        getServer().getPluginManager().registerEvents(new SacrificeListener(sacrificeMap), this);
         // IMPORTANT: on passe la même instance de ClanService + war + glory
         getServer().getPluginManager().registerEvents(
                 new WarListener(this.clans, warService, gloryService),
                 this
         );
+        var capital = new CapitalManager(this, clans);
+        getServer().getPluginManager().registerEvents(capital, this);
+        capital.start();
 
-        clearLoop.start();
+        //clearLoop.start();
 
         // ===============================
         //           AFK SETUP
@@ -172,9 +187,10 @@ public final class Deepstone extends JavaPlugin {
 
 
 
+
         getLogger().info("Deepstone activé !");
         getLogger().info("DeepstoneClans activé.");
-        getLogger().info("Deepstone ClearLagg activé !");
+        getLogger().info("Deepstone ClearLagg désactivé !");
         getLogger().info("Deepstone AFK activé !");
     }
 
@@ -190,16 +206,16 @@ public final class Deepstone extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (clearLoop != null) clearLoop.stop();
+       // if (clearLoop != null) clearLoop.stop();
         if (afkService != null) afkService.stop();
 
         try {
-            clans.saveAll();
+            if (clans != null) clans.saveAll();
         } catch (Exception e) {
-            getLogger().severe("Failed to save clans: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
 
 
     public ProtectionManager getProtectionManager() {

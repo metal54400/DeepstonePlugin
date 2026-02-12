@@ -32,7 +32,7 @@ public class VillagerTradeLimiter implements Listener {
             long lastTrade = bookTradeCooldown.getOrDefault(playerUUID, 0L);
             if (System.currentTimeMillis() - lastTrade < 3600000) {
                 event.setCancelled(true);
-                player.sendMessage("\u00a7cVous devez attendre avant d'acheter un autre livre enchanté !");
+                player.sendMessage("§7[§e?§7] Vous devez attendre avant d'acheter un autre livre enchanté !");
                 return;
             }
             bookTradeCooldown.put(playerUUID, System.currentTimeMillis());

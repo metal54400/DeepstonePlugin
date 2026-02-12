@@ -1,6 +1,5 @@
 package fr.deepstonestudio.deepstone.Commands;
 
-
 import fr.deepstonestudio.deepstone.model.Role;
 import fr.deepstonestudio.deepstone.util.ClanService;
 import fr.deepstonestudio.deepstone.util.Msg;
@@ -37,6 +36,16 @@ public final class ClanCommand implements CommandExecutor, TabCompleter {
                 p.sendMessage(Msg.info("/clan setjarl <joueur>"));
                 p.sendMessage(Msg.info("/clan info [nom]"));
                 p.sendMessage(Msg.info("/clan list"));
+                p.sendMessage(Msg.info("/clan setcapital"));
+
+
+                // ✅ Diplomatie
+                p.sendMessage(Msg.info("/clan ally <clan>"));
+                p.sendMessage(Msg.info("/clan truce <clan>"));
+                p.sendMessage(Msg.info("/clan breakalliance <clan>"));
+
+                // ✅ Chat
+                p.sendMessage(Msg.info("/clan chat"));
                 return true;
             }
 
@@ -107,10 +116,42 @@ public final class ClanCommand implements CommandExecutor, TabCompleter {
                     p.sendMessage(Msg.info("Membres: " + c.size()));
                     p.sendMessage(Msg.info("Roi: " + nameOrUnknown(c.getKing())));
                     p.sendMessage(Msg.info("Jarl: " + nameOrUnknown(c.getJarl())));
+                    p.sendMessage(Msg.info("Alliés: " + (c.getAllies().isEmpty() ? "—" : String.join(", ", c.getAllies()))));
+                    p.sendMessage(Msg.info("Trêves: " + (c.getTruces().isEmpty() ? "—" : String.join(", ", c.getTruces()))));
                 }
                 case "list" -> {
                     p.sendMessage(Msg.info("Clans: " + String.join(", ", clans.clanNames())));
                 }
+
+                // ✅ Diplomatie
+                case "ally" -> {
+                    if (args.length < 2) throw new IllegalStateException("Usage: /clan ally <clan>");
+                    clans.ally(p, args[1]);
+                    p.sendMessage(Msg.ok("Alliance formée avec " + args[1] + "."));
+                }
+                case "truce" -> {
+                    if (args.length < 2) throw new IllegalStateException("Usage: /clan truce <clan>");
+                    clans.truce(p, args[1]);
+                    p.sendMessage(Msg.ok("Trêve signée avec " + args[1] + "."));
+                }
+                case "breakalliance" -> {
+                    if (args.length < 2) throw new IllegalStateException("Usage: /clan breakalliance <clan>");
+                    clans.breakAlliance(p, args[1]);
+                    p.sendMessage(Msg.ok("Relation rompue avec " + args[1] + "."));
+                }
+
+                // ✅ Chat clan toggle
+                case "chat" -> {
+                    if (clans.getClanOf(p.getUniqueId()) == null) throw new IllegalStateException("Tu n’es dans aucun clan.");
+                    boolean on = clans.toggleClanChat(p.getUniqueId());
+                    p.sendMessage(Msg.ok("Chat clan " + (on ? "activé" : "désactivé") + "."));
+                }
+                case "setcapital" -> {
+                    clans.setCapital(p);
+                    var c = clans.getClanOf(p.getUniqueId());
+                    p.sendMessage(Msg.ok("Capitale définie pour " + c.getDisplayName() + " (coeur posé sous tes pieds)."));
+                }
+
                 default -> p.sendMessage(Msg.err("Commande inconnue. /clan help"));
             }
 
@@ -133,14 +174,20 @@ public final class ClanCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(List.of("help","create","disband","invite","join","leave","kick","role","setking","setjarl","info","list"), args[0]);
+            return filter(List.of(
+                    "help","create","disband","invite","join","leave","kick","role",
+                    "setking","setjarl","info","list",
+                    "ally","truce","breakalliance","chat"
+            ), args[0]);
         }
         if (args.length == 2) {
             String sub = args[0].toLowerCase(Locale.ROOT);
             if (sub.equals("invite") || sub.equals("kick") || sub.equals("role") || sub.equals("setking") || sub.equals("setjarl")) {
-                return null; // laisse le client suggérer les joueurs
+                return null; // joueurs
             }
-            if (sub.equals("info")) return filter(clans.clanNames(), args[1]);
+            if (sub.equals("info") || sub.equals("ally") || sub.equals("truce") || sub.equals("breakalliance")) {
+                return filter(clans.clanNames(), args[1]);
+            }
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("role")) {
             return filter(List.of("WARRIOR","PEASANT"), args[2]);

@@ -27,7 +27,7 @@ public class WarService {
     public War declare(String attacker, String target) {
         if (cooldowns.containsKey(attacker) &&
                 System.currentTimeMillis() < cooldowns.get(attacker)) {
-            throw new IllegalStateException("Cooldown actif.");
+            throw new IllegalStateException("§7[§e?§7] Cooldown actif.");
         }
 
         War war = new War(attacker, target);
