@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.jetbrains.annotations.NotNull;
 
 
 public class Msg {
@@ -20,16 +21,16 @@ public class Msg {
 
     private Msg() {}
 
-    public static Component ok(String s) {
-        return Component.text("✔ " + s, NamedTextColor.GREEN);
+    public static @NotNull String ok(String s) {
+        return Component.text("§7[§e?§7] " + s, NamedTextColor.GREEN);
     }
 
-    public static Component err(String s) {
-        return Component.text("✖ " + s, NamedTextColor.RED);
+    public static String err(String s) {
+        return Component.text("§7[§c!§7] " + s, NamedTextColor.RED);
     }
 
     public static Component info(String s) {
-        return Component.text("➤ " + s, NamedTextColor.AQUA);
+        return Component.text("§7[§d!§7] " + s, NamedTextColor.AQUA);
     }
 
 
