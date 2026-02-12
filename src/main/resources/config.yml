@@ -71,3 +71,24 @@ addLoreOnCreative: true
 # Lore ajouté
 # {staff} = nom du membre du staff
 loreitem: "&7Remboursé par &b{staff}"
+
+season:
+  enabled: true
+  length-days: 30
+  run-hour: 12        # heure locale serveur
+  run-minute: 0
+  reset-player-glory: true
+
+rewards:
+  top1:
+    - "eco give %king% 500"
+    - "give %king% netherite_ingot 2"
+  top2:
+    - "give %king% diamond 16"
+  top3:
+    - "give %king% emerald 32"
+
+discord:
+  enabled: true
+  webhook-url: "https://discord.com/api/webhooks/1471593171044536404/jmRM7c76YpYDybd8gY8zRs4jdWeV24x4nCN-SqePLrTP__8yG5VSimIzpSlMcgyTSCPE"
+  mention-role-id: "1397967686410961026"   # optionnel, ex: "1234567890"

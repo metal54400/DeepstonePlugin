@@ -7,6 +7,7 @@ import fr.deepstonestudio.deepstone.Manager.ProtectionManager;
 import fr.deepstonestudio.deepstone.api.AFK.AfkService;
 import fr.deepstonestudio.deepstone.api.AFK.Listener.PlayerActivityListener;
 import fr.deepstonestudio.deepstone.api.DeepstoneAfkExpansion;
+import fr.deepstonestudio.deepstone.api.DiscordWebhook;
 import fr.deepstonestudio.deepstone.api.EssentialsHook;
 import fr.deepstonestudio.deepstone.storage.YamlStore;
 import fr.deepstonestudio.deepstone.util.*;
@@ -30,6 +31,8 @@ public final class Deepstone extends JavaPlugin {
     private EssentialsHook essentialsHook; // champ (pas variable locale)
     private AfkService afkService;
     private ClanService clans;
+    private WarService warService;
+    private GloryService gloryService;
     public static Deepstone instance;
     private Economy economy; // peut rester null
     private final Map<UUID, Long> sacrificeMap = new HashMap<>();
@@ -47,6 +50,12 @@ public final class Deepstone extends JavaPlugin {
 
         this.clearService = new ClearService(this);
         this.clearLoop = new ClearLoop(this, clearService);
+        this.warService = new WarService();
+        this.gloryService = new GloryService(this);
+
+        DiscordWebhook discord = new DiscordWebhook(this);
+        SeasonService season = new SeasonService(this, this.clans, this.gloryService, discord);
+        season.startScheduler();
 
         var store = new YamlStore(this);
         this.clans = new ClanService(store);

@@ -44,6 +44,10 @@ public class GloryService {
         }
     }
 
+    public void resetAll() {
+        playerGlory.clear();
+    }
+
     public int get(UUID uuid) {
         return playerGlory.getOrDefault(uuid, 0);
     }
