@@ -78,7 +78,7 @@ public final class CapitalManager implements Listener, Runnable {
                 defended.removeGlory(gloryLossOnDestroy);
                 defended.setCapital(null);
 
-                Bukkit.broadcastMessage(Msg.err("🔥 La capitale de " + defended.getDisplayName() + " a été détruite ! (-" + gloryLossOnDestroy + " gloire)"));
+                Bukkit.broadcastMessage(String.valueOf(Msg.err("🔥 La capitale de " + defended.getDisplayName() + " a été détruite ! (-" + gloryLossOnDestroy + " gloire)")));
                 breaker.playSound(breaker.getLocation(), Sound.ENTITY_WITHER_DEATH, 1f, 1f);
 
                 // reset capture state
@@ -215,7 +215,7 @@ public final class CapitalManager implements Listener, Runnable {
 
             // feedback léger au clan défendu (toutes les 5 sec)
             if (st.progress % 5 == 0) {
-                broadcastToClan(defended, Msg.err("⚠ Capitale attaquée ! Capture: " + st.progress + "/" + captureSeconds + " sec"));
+                broadcastToClan(defended, String.valueOf(Msg.err("⚠ Capitale attaquée ! Capture: " + st.progress + "/" + captureSeconds + " sec")));
             }
 
             if (st.progress >= captureSeconds) {
@@ -225,8 +225,8 @@ public final class CapitalManager implements Listener, Runnable {
                     st.buffOwnerClanId = attacker.getName();
                     st.buffUntil = now + captureBuffSeconds * 1000L;
 
-                    Bukkit.broadcastMessage(Msg.ok("🏴 " + attacker.getDisplayName() + " a capturé la capitale de " + defended.getDisplayName() +
-                            " ! Bonus " + (captureBuffSeconds) + "s."));
+                    Bukkit.broadcastMessage(String.valueOf(Msg.ok("🏴 " + attacker.getDisplayName() + " a capturé la capitale de " + defended.getDisplayName() +
+                            " ! Bonus " + (captureBuffSeconds) + "s.")));
                 }
                 st.progress = 0;
                 st.attackerClanId = null;

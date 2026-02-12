@@ -1,6 +1,7 @@
 package fr.deepstonestudio.deepstone.util;
 
 
+import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import net.kyori.adventure.text.Component;
@@ -21,11 +22,11 @@ public class Msg {
 
     private Msg() {}
 
-    public static @NotNull String ok(String s) {
+    public static Component  ok(String s) {
         return Component.text("§7[§e?§7] " + s, NamedTextColor.GREEN);
     }
 
-    public static String err(String s) {
+    public static Component err(String s) {
         return Component.text("§7[§c!§7] " + s, NamedTextColor.RED);
     }
 
