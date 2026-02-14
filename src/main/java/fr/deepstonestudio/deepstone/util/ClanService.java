@@ -10,6 +10,7 @@ import java.util.*;
 
 public final class ClanService {
     private final YamlStore store;
+    private final boolean gpEnabled;
 
     // In-memory
     private final Map<String, Clan> clans = new HashMap<>();
@@ -22,8 +23,9 @@ public final class ClanService {
     // ✅ clan chat toggle
     private final Set<UUID> clanChat = new HashSet<>();
 
-    public ClanService(YamlStore store) {
+    public ClanService(YamlStore store, boolean gpEnabled) {
         this.store = store;
+        this.gpEnabled = gpEnabled;
     }
 
     public void loadAll() throws IOException {
@@ -315,4 +317,5 @@ public final class ClanService {
         if (ca.isAlliedWith(cb.getName()) && cb.isAlliedWith(ca.getName())) return false;
         return true;
     }
+
 }

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'fr.deepstonestudio'
-version = '0.12'
+version = '0.13'
 
 
 repositories {
@@ -19,6 +19,9 @@ repositories {
     }
     maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
     maven { url = 'https://repo.essentialsx.net/releases/' }
+    maven {
+        url = "https://repo.glaremasters.me/repository/bloodshot/"
+    }
 }
 
 dependencies {
@@ -33,6 +36,7 @@ dependencies {
     compileOnly("com.github.MilkBowl:VaultAPI:1.7"){
         exclude group: "org.bukkit", module: "bukkit"
     }
+    compileOnly "com.github.GriefPrevention:GriefPrevention:16.18.2"
 }
 
 tasks {

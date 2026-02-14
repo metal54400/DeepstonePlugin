@@ -12,21 +12,27 @@ softdepend:
   - PlaceholderAPI
   - Essentials
   - Vault
+  - GriefPrevention
 
 commands:
   mercenary:
     description: Mercenary commands
     usage: /mercenary help
+
   priere:
     description: Prier les dieux nordiques
+
   war:
     description: Système de guerre
+
   clan:
     description: Gestion des clans Deepstone
     usage: /clan help
+
   clearlag:
     description: Force le nettoyage des items au sol
     usage: /clearlag
+
 
 
 
