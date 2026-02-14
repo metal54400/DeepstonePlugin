@@ -1,4 +1,4 @@
-name: Build + Discord + Draft Release
+name: Build + Discord + Draft Release (Gradle version)
 
 on:
   push:
@@ -9,15 +9,16 @@ on:
 
   workflow_dispatch:
     inputs:
-      version:
-        description: "Tag/release (ex: v1.2.3)"
-        required: true
       prerelease:
         description: "Release en prerelease ? (true/false)"
         required: false
         default: "false"
       upload_jar:
         description: "Attacher le jar build/libs à la release ? (true/false)"
+        required: false
+        default: "true"
+      tag_prefix_v:
+        description: "Préfixer le tag par 'v' ? (true/false)"
         required: false
         default: "true"
 
@@ -27,6 +28,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      gradle_version: ${{ steps.getver.outputs.gradle_version }}
+      tag_version: ${{ steps.getver.outputs.tag_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,16 +44,42 @@ jobs:
       - name: Setup Gradle (cache)
         uses: gradle/actions/setup-gradle@v3
 
-      # Fix permission denied + éventuel CRLF
       - name: Prepare Gradle Wrapper
         shell: bash
         run: |
-          # Si gradlew n'a pas les bons droits
           chmod +x ./gradlew
-
-          # Si gradlew a des fins de ligne Windows (CRLF), ça peut casser sur Linux
-          # Cette commande ne casse rien si déjà OK
+          # Corrige CRLF si le fichier vient de Windows
           sed -i 's/\r$//' ./gradlew
+
+      # IMPORTANT: ajoute la tâche printVersion dans build.gradle/build.gradle.kts (voir plus bas)
+      - name: Get version from Gradle
+        id: getver
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          V="$(./gradlew -q printVersion | tail -n 1 | tr -d '[:space:]')"
+          if [ -z "$V" ]; then
+            echo "Version Gradle vide. Vérifie la tâche printVersion."
+            exit 1
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.tag_prefix_v }}" = "true" ]; then
+            TAG="v$V"
+          else
+            # Sur push/release on garde aussi un TAG cohérent (utile pour logs)
+            # (si tu veux toujours v, remplace par TAG="v$V")
+            TAG="$V"
+            if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+              TAG="v$V"
+            fi
+          fi
+
+          echo "gradle_version=$V" >> "$GITHUB_OUTPUT"
+          echo "tag_version=$TAG" >> "$GITHUB_OUTPUT"
+
+          echo "Gradle version: $V"
+          echo "Tag version: $TAG"
 
       - name: Build (Gradle)
         run: ./gradlew clean build
@@ -76,23 +106,32 @@ jobs:
           name: jar
           path: dist
 
-      - name: Create tag + Draft release (with notes)
+      - name: Check if tag already exists (ignore if yes)
+        id: tagcheck
+        shell: bash
+        env:
+          TAG: ${{ needs.build.outputs.tag_version }}
+        run: |
+          set -euo pipefail
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG$"; then
+            echo "Tag $TAG existe déjà → on ignore (pas d'erreur)."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create tag + Draft release (from Gradle version)
+        if: ${{ steps.tagcheck.outputs.exists != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ inputs.version }}
+          TAG: ${{ needs.build.outputs.tag_version }}
           PRERELEASE: ${{ inputs.prerelease }}
           UPLOAD_JAR: ${{ inputs.upload_jar }}
         shell: bash
         run: |
           set -euo pipefail
 
-          # Vérifie si le tag existe déjà (local ou remote)
-          if git ls-remote --tags origin | grep -q "refs/tags/$VERSION$"; then
-            echo "Le tag $VERSION existe déjà sur origin. Abandon."
-            exit 1
-          fi
-
-          args=( "$VERSION" --draft --generate-notes )
+          args=( "$TAG" --draft --generate-notes )
 
           if [ "$PRERELEASE" = "true" ]; then
             args+=( --prerelease )
@@ -100,11 +139,15 @@ jobs:
 
           if [ "$UPLOAD_JAR" = "true" ]; then
             ls -la dist
-            # Si tu veux cibler un jar précis, remplace dist/*.jar par un pattern plus strict
+            # Si tu veux un jar précis, remplace par ex: dist/*-all.jar ou dist/*-shadow.jar
             args+=( dist/*.jar )
           fi
 
           gh release create "${args[@]}"
+
+      - name: Done (tag existed)
+        if: ${{ steps.tagcheck.outputs.exists == 'true' }}
+        run: echo "Rien à faire : tag déjà existant."
 
   discord:
     runs-on: ubuntu-latest
@@ -126,9 +169,11 @@ jobs:
             AUTHOR="${{ github.actor }}"
             COMMIT_MSG="${{ github.event.head_commit.message }}"
             COMMIT_URL="${{ github.event.head_commit.url }}"
+            VERSION="${{ needs.build.outputs.gradle_version }}"
 
             CONTENT="$(printf '%s\n' \
-              "✅ **Build OK — Nouveau commit sur DeepstonePlugin**" \
+              "✅ **Build OK — DeepstonePlugin**" \
+              "🧩 Version (Gradle) : $VERSION" \
               "👤 $AUTHOR" \
               "📝 $COMMIT_MSG" \
               "🔗 $COMMIT_URL")"
@@ -138,14 +183,12 @@ jobs:
             VERSION="${{ github.event.release.tag_name }}"
             URL="${{ github.event.release.html_url }}"
             CHANGELOG="${{ github.event.release.body }}"
-            if [ -z "$CHANGELOG" ]; then
-              CHANGELOG="(pas de détails)"
-            fi
+            [ -z "$CHANGELOG" ] && CHANGELOG="(pas de détails)"
 
             CONTENT="$(printf '%s\n' \
-              "✅ **Build OK — Release publiée : DeepstonePlugin**" \
-              "" \
+              "✅ **Release publiée : DeepstonePlugin**" \
               "🧩 Version : $VERSION" \
+              "" \
               "📝 Notes :" \
               "$CHANGELOG" \
               "" \
@@ -153,7 +196,4 @@ jobs:
           fi
 
           PAYLOAD=$(jq -n --arg content "$CONTENT" '{content: $content}')
-
-          curl -sS -H "Content-Type: application/json" \
-               -d "$PAYLOAD" \
-               "$WEBHOOK_URL"
+          curl -sS -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL"
