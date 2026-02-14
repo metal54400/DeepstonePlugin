@@ -1,4 +1,4 @@
-name: Build + Discord + Draft Release (Gradle version)
+name: Build + Discord + Draft Release (Jar version)
 
 on:
   push:
@@ -14,7 +14,7 @@ on:
         required: false
         default: "false"
       upload_jar:
-        description: "Attacher le jar build/libs à la release ? (true/false)"
+        description: "Attacher le jar à la release ? (true/false)"
         required: false
         default: "true"
       tag_prefix_v:
@@ -29,66 +29,83 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      gradle_version: ${{ steps.getver.outputs.gradle_version }}
-      tag_version: ${{ steps.getver.outputs.tag_version }}
+      gradle_version: ${{ steps.meta.outputs.gradle_version }}
+      tag_version: ${{ steps.meta.outputs.tag_version }}
+      jar_name: ${{ steps.meta.outputs.jar_name }}
+      jar_path: ${{ steps.meta.outputs.jar_path }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Setup Gradle (cache)
-        uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v3
 
       - name: Prepare Gradle Wrapper
         shell: bash
         run: |
           chmod +x ./gradlew
-          # Corrige CRLF si le fichier vient de Windows
           sed -i 's/\r$//' ./gradlew
 
-      # IMPORTANT: ajoute la tâche printVersion dans build.gradle/build.gradle.kts (voir plus bas)
-      - name: Get version from Gradle
-        id: getver
+      - name: Build (Gradle)
+        run: ./gradlew clean build
+
+      - name: Resolve jar + version
+        id: meta
         shell: bash
         run: |
           set -euo pipefail
 
+          # version Gradle (doit être la même que celle dans le jar)
           V="$(./gradlew -q printVersion | tail -n 1 | tr -d '[:space:]')"
           if [ -z "$V" ]; then
-            echo "Version Gradle vide. Vérifie la tâche printVersion."
+            echo "Version Gradle vide (printVersion)."
+            exit 1
+          fi
+
+          # Choisir le jar "principal"
+          # Exclut plain/sources/javadoc
+          JAR="$(ls -1 build/libs/*.jar 2>/dev/null \
+            | grep -Ev '(-plain|-sources|-javadoc)\.jar$' \
+            | head -n 1 || true)"
+
+          if [ -z "$JAR" ]; then
+            echo "Aucun jar principal trouvé dans build/libs."
+            ls -la build/libs || true
+            exit 1
+          fi
+
+          JAR_NAME="$(basename "$JAR")"
+
+          # Vérifie que le nom du jar contient la version
+          if ! echo "$JAR_NAME" | grep -q "$V"; then
+            echo "Attention: le jar '$JAR_NAME' ne contient pas la version '$V'."
+            echo "=> Configure archiveBaseName/archiveVersion dans Gradle."
             exit 1
           fi
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.tag_prefix_v }}" = "true" ]; then
             TAG="v$V"
           else
-            # Sur push/release on garde aussi un TAG cohérent (utile pour logs)
-            # (si tu veux toujours v, remplace par TAG="v$V")
-            TAG="$V"
-            if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
-              TAG="v$V"
-            fi
+            TAG="v$V"
           fi
 
           echo "gradle_version=$V" >> "$GITHUB_OUTPUT"
           echo "tag_version=$TAG" >> "$GITHUB_OUTPUT"
+          echo "jar_name=$JAR_NAME" >> "$GITHUB_OUTPUT"
+          echo "jar_path=$JAR" >> "$GITHUB_OUTPUT"
 
-          echo "Gradle version: $V"
-          echo "Tag version: $TAG"
-
-      - name: Build (Gradle)
-        run: ./gradlew clean build
+          echo "Version: $V"
+          echo "Tag: $TAG"
+          echo "Jar: $JAR_NAME"
 
       - name: Upload artifact (JAR)
         uses: actions/upload-artifact@v4
         with:
           name: jar
-          path: build/libs/*.jar
+          path: ${{ steps.meta.outputs.jar_path }}
           if-no-files-found: error
 
   draft_release:
@@ -96,8 +113,7 @@ jobs:
     needs: build
     if: ${{ github.event_name == 'workflow_dispatch' && needs.build.result == 'success' }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Download jar artifact
         if: ${{ inputs.upload_jar == 'true' }}
@@ -114,40 +130,36 @@ jobs:
         run: |
           set -euo pipefail
           if git ls-remote --tags origin | grep -q "refs/tags/$TAG$"; then
-            echo "Tag $TAG existe déjà → on ignore (pas d'erreur)."
+            echo "Tag $TAG existe déjà → on ignore."
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create tag + Draft release (from Gradle version)
+      - name: Create tag + Draft release (tag = jar version)
         if: ${{ steps.tagcheck.outputs.exists != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.build.outputs.tag_version }}
           PRERELEASE: ${{ inputs.prerelease }}
           UPLOAD_JAR: ${{ inputs.upload_jar }}
+          JAR_NAME: ${{ needs.build.outputs.jar_name }}
         shell: bash
         run: |
           set -euo pipefail
 
           args=( "$TAG" --draft --generate-notes )
-
           if [ "$PRERELEASE" = "true" ]; then
             args+=( --prerelease )
           fi
 
           if [ "$UPLOAD_JAR" = "true" ]; then
+            # dist contient exactement le jar choisi
             ls -la dist
-            # Si tu veux un jar précis, remplace par ex: dist/*-all.jar ou dist/*-shadow.jar
             args+=( dist/*.jar )
           fi
 
           gh release create "${args[@]}"
-
-      - name: Done (tag existed)
-        if: ${{ steps.tagcheck.outputs.exists == 'true' }}
-        run: echo "Rien à faire : tag déjà existant."
 
   discord:
     runs-on: ubuntu-latest
@@ -170,10 +182,12 @@ jobs:
             COMMIT_MSG="${{ github.event.head_commit.message }}"
             COMMIT_URL="${{ github.event.head_commit.url }}"
             VERSION="${{ needs.build.outputs.gradle_version }}"
+            JAR="${{ needs.build.outputs.jar_name }}"
 
             CONTENT="$(printf '%s\n' \
               "✅ **Build OK — DeepstonePlugin**" \
-              "🧩 Version (Gradle) : $VERSION" \
+              "🧩 Version : $VERSION" \
+              "📦 Jar : $JAR" \
               "👤 $AUTHOR" \
               "📝 $COMMIT_MSG" \
               "🔗 $COMMIT_URL")"
