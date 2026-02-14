@@ -1,0 +1,94 @@
+# =====================================================
+#                    Deepstone
+# =====================================================
+# Configuration principale du plugin
+# =====================================================
+
+
+# =====================================================
+#                CLEAR LAG / ITEMS
+# =====================================================
+
+# Intervalle entre chaque nettoyage (en secondes)
+interval-seconds: 300
+
+# Messages d’avertissement avant le nettoyage
+warnings:
+  - time: 60
+    message: "&7[&c!&7] Nettoyage des items dans &c60 &7secondes !"
+  - time: 10
+    message: "&7[&c!&7] Nettoyage des items dans &c10 &7secondes !"
+
+# Message après le nettoyage
+# {count} = nombre d’items supprimés
+done-message: "&7[&e?&7] &a{count} &aitems ont été supprimés."
+
+
+# =====================================================
+#                      AFK
+# =====================================================
+
+afk:
+  # Temps avant de passer AFK (en secondes)
+  # -1 = désactiver l’AFK automatique
+  auto-afk: 300
+
+  # Temps avant kick une fois AFK (en secondes)
+  # -1 = désactiver le kick AFK
+  auto-afk-kick: 1200
+
+  # Message de kick AFK
+  kick-message: "&7[&c!&7] &cKick : AFK trop longtemps."
+
+  # Annulation du statut AFK
+  cancel-on-move: true
+  cancel-on-chat: true
+  cancel-on-interact: true
+
+  # Messages AFK
+  messages:
+    enabled: true
+
+    # true = message à tout le serveur
+    # false = message uniquement au joueur
+    broadcast: true
+
+    # {PLAYER} = nom du joueur
+    now-afk: "&e{PLAYER} &7est maintenant &7[AFK]"
+    no-longer-afk: "&e{PLAYER} &7n'est plus AFK"
+
+  # Suffix affiché dans le TAB (via PlaceholderAPI)
+  suffix: "&7[&9AFK]"
+
+
+# =====================================================
+#                CREATIVE / ITEMS
+# =====================================================
+
+# Ajoute un lore automatiquement sur les items pris en créatif
+addLoreOnCreative: true
+
+# Lore ajouté
+# {staff} = nom du membre du staff
+loreitem: "&7Remboursé par &b{staff}"
+
+season:
+  enabled: true
+  length-days: 30
+  run-hour: 12        # heure locale serveur
+  run-minute: 0
+  reset-player-glory: true
+
+rewards:
+  top1:
+    - "eco give %king% 500"
+    - "give %king% netherite_ingot 2"
+  top2:
+    - "give %king% diamond 16"
+  top3:
+    - "give %king% emerald 32"
+
+discord:
+  enabled: true
+  webhook-url: "https://discord.com/api/webhooks/1471593171044536404/jmRM7c76YpYDybd8gY8zRs4jdWeV24x4nCN-SqePLrTP__8yG5VSimIzpSlMcgyTSCPE"
+  mention-role-id: "1397967686410961026"   # optionnel, ex: "1234567890"

@@ -1,0 +1,62 @@
+name: Deepstone
+version: 0.13
+description: Le plugin c'est lié sur Les Nordique
+main: fr.deepstonestudio.deepstone.Deepstone
+api-version: '1.21'
+website: https://deep.deespstone.fr
+authors:
+  - Deepstone-Studio
+  - metal54400_
+
+softdepend:
+  - PlaceholderAPI
+  - Essentials
+  - Vault
+  - GriefPrevention
+
+commands:
+  mercenary:
+    description: Mercenary commands
+    usage: /mercenary help
+
+  priere:
+    description: Prier les dieux nordiques
+
+  war:
+    description: Système de guerre
+
+  clan:
+    description: Gestion des clans Deepstone
+    usage: /clan help
+
+  clearlag:
+    description: Force le nettoyage des items au sol
+    usage: /clearlag
+
+
+
+
+permissions:
+  deepstone.clan.admin:
+    description: Gestion des clans Deepstone
+    default: op
+
+  deepstone.clearlag:
+    description: Autorise /clearlag
+    default: op
+
+  deepstone.pl:
+    description: Autorise l'utilisation de /pl
+    default: op
+
+  deepstone.afk.bypass:
+    description: Ne passe jamais AFK via DeepstoneAFK (mode sans Essentials).
+    default: op
+
+  deepstone.afk.kickexempt:
+    description: Immunisé contre l'auto-kick AFK via DeepstoneAFK (mode sans Essentials).
+    default: op
+  deepstone.rembourse:
+    description: Permissions modérateur
+    default: op
+
