@@ -33,6 +33,7 @@ public final class Deepstone extends JavaPlugin {
     private ClanService clans;
     private WarService warService;
     private GloryService gloryService;
+    private boolean gpEnabled = false;
     public static Deepstone instance;
     private Economy economy; // peut rester null
     private final Map<UUID, Long> sacrificeMap = new HashMap<>();
@@ -58,7 +59,7 @@ public final class Deepstone extends JavaPlugin {
         season.startScheduler();
 
         var store = new YamlStore(this);
-        this.clans = new ClanService(store);
+        this.clans = new ClanService(store, gpEnabled);
         MercenaryService mercService = new MercenaryService(clans, store);
         try {
             mercService.loadAll();
@@ -160,6 +161,13 @@ public final class Deepstone extends JavaPlugin {
             getLogger().info("Essentials non présent: AFK + kick gérés par Deepstone.");
         }
 
+        if (getServer().getPluginManager().getPlugin("GriefPrevention") != null) {
+            gpEnabled = true;
+            getLogger().info("GriefPrevention détecté ✔");
+        } else {
+            getLogger().info("GriefPrevention non détecté. Fonctionnalités de trust désactivées.");
+        }
+
         boolean useInternalAfk = (this.essentialsHook == null);
 
         // Création du service AFK
@@ -223,6 +231,9 @@ public final class Deepstone extends JavaPlugin {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    public boolean isGpEnabled() {
+        return gpEnabled;
     }
 
 
