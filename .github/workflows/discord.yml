@@ -1,19 +1,116 @@
-name: Discord annonces
+name: Build + Discord + Draft Release
 
 on:
   push:
     branches: ["main", "master"]
+
   release:
     types: [published]
 
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version du tag/release (ex: v1.2.3)"
+        required: true
+      prerelease:
+        description: "Mettre la release en prerelease ?"
+        required: false
+        default: "false"
+      upload_jar:
+        description: "Attacher le .jar build/libs à la release ?"
+        required: false
+        default: "true"
+
+permissions:
+  contents: write
+
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle (cache)
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build (Gradle)
+        run: ./gradlew clean build
+
+      - name: Upload artifact (jar)
+        uses: actions/upload-artifact@v4
+        with:
+          name: jar
+          path: build/libs/*.jar
+
+  # Création TAG + RELEASE DRAFT (manuel)
+  draft_release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' && needs.build.result == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download jar artifact
+        if: ${{ inputs.upload_jar == 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: jar
+          path: dist
+
+      - name: Create tag + draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          UPLOAD_JAR: ${{ inputs.upload_jar }}
+        run: |
+          set -e
+
+          # Optionnel: empêcher de recréer un tag existant
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION existe déjà. Abandon."
+            exit 1
+          fi
+
+          # Crée la release draft + tag sur le commit courant (HEAD)
+          args=( "$VERSION" --draft --generate-notes )
+          if [ "$PRERELEASE" = "true" ]; then
+            args+=( --prerelease )
+          fi
+
+          # Attacher le jar si demandé
+          if [ "$UPLOAD_JAR" = "true" ]; then
+            # Si plusieurs jars, tu peux affiner le filtre (ex: *-all.jar)
+            ls -la dist || true
+            args+=( dist/*.jar )
+          fi
+
+          gh release create "${args[@]}"
+
+  # Discord: annonce si build OK (push & release published)
   discord:
     runs-on: ubuntu-latest
+    needs: build
+    if: ${{ (github.event_name == 'push' || github.event_name == 'release') && needs.build.result == 'success' }}
     steps:
       - name: Envoyer message Discord
         shell: bash
         run: |
-          WEBHOOK_URL="https://discord.com/api/webhooks/1470481645449510946/46pIUNdqayUcEzrANvUyFhyuWXuJaetAfywveyr1mTScLOF762-oWoe3Ye-tk40GCihO"
+          # Recommandé: mettre ça en secret GitHub (DISCORD_WEBHOOK_URL)
+          WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK_URL }}"
+
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "Secret DISCORD_WEBHOOK_URL manquant."
+            exit 1
+          fi
 
           if [ "${{ github.event_name }}" = "push" ]; then
             AUTHOR="${{ github.actor }}"
@@ -21,7 +118,7 @@ jobs:
             COMMIT_URL="${{ github.event.head_commit.url }}"
 
             CONTENT="$(printf '%s\n' \
-              "🔧 **Nouveau commit sur DeepstonePlugin**" \
+              "✅ **Build OK — Nouveau commit sur DeepstonePlugin**" \
               "👤 $AUTHOR" \
               "📝 $COMMIT_MSG" \
               "🔗 $COMMIT_URL")"
@@ -37,10 +134,10 @@ jobs:
             fi
 
             CONTENT="$(printf '%s\n' \
-              "📢 **Nouvelle mise à jour du plugin DeepstonePlugin**" \
+              "✅ **Build OK — Release publiée : DeepstonePlugin**" \
               "" \
               "🧩 Version : $VERSION" \
-              "📝 Changelog :" \
+              "📝 Notes :" \
               "$CHANGELOG" \
               "" \
               "🔗 $URL")"
