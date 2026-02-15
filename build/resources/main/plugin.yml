@@ -1,5 +1,5 @@
 name: Deepstone
-version: 0.14
+version: 0.15
 description: Le plugin c'est lié sur Les Nordique
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
