@@ -7,6 +7,8 @@ website: https://deep.deespstone.fr
 authors:
   - Deepstone-Studio
   - metal54400_
+depend:
+  - ChestShop
 
 softdepend:
   - PlaceholderAPI

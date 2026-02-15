@@ -9,6 +9,7 @@ import fr.deepstonestudio.deepstone.api.AFK.Listener.PlayerActivityListener;
 import fr.deepstonestudio.deepstone.api.DeepstoneAfkExpansion;
 import fr.deepstonestudio.deepstone.api.DiscordWebhook;
 import fr.deepstonestudio.deepstone.api.EssentialsHook;
+import fr.deepstonestudio.deepstone.api.ShopPriceListener;
 import fr.deepstonestudio.deepstone.storage.YamlStore;
 import fr.deepstonestudio.deepstone.util.*;
 import net.milkbowl.vault.economy.Economy;
@@ -118,6 +119,7 @@ public final class Deepstone extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ClanFriendlyFireListener(clans,mercService), this);
         getServer().getPluginManager().registerEvents(new ClanChatListener(this, clans), this);
         getServer().getPluginManager().registerEvents(new SacrificeListener(sacrificeMap), this);
+        getServer().getPluginManager().registerEvents(new ShopPriceListener(), this);
         // IMPORTANT: on passe la même instance de ClanService + war + glory
         getServer().getPluginManager().registerEvents(
                 new WarListener(this.clans, warService, gloryService),

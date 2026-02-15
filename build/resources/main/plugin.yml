@@ -1,5 +1,5 @@
 name: Deepstone
-version: 0.15
+version: 0.16
 description: Le plugin c'est lié sur Les Nordique
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
@@ -7,12 +7,15 @@ website: https://deep.deespstone.fr
 authors:
   - Deepstone-Studio
   - metal54400_
+depend:
+  - ChestShop
 
 softdepend:
   - PlaceholderAPI
   - Essentials
   - Vault
   - GriefPrevention
+
 
 commands:
   mercenary:
