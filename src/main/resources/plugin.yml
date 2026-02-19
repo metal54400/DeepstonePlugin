@@ -9,12 +9,12 @@ authors:
   - metal54400_
 depend:
   - ChestShop
+  - GriefPrevention
 
 softdepend:
   - PlaceholderAPI
   - Essentials
   - Vault
-  - GriefPrevention
 
 commands:
   mercenary:
@@ -23,6 +23,7 @@ commands:
 
   priere:
     description: Prier les dieux nordiques
+    usage: /priere <thor|odin|loki|freya|frey>
 
   war:
     description: Système de guerre

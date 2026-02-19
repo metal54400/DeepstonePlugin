@@ -1,6 +1,5 @@
 package fr.deepstonestudio.deepstone.util;
 
-
 import fr.deepstonestudio.deepstone.Deepstone;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -15,20 +14,26 @@ public class RunePlacer {
     private final Deepstone plugin;
     private final Random rng = new Random();
 
-    private final int radius = 15;
-    private final int ringThickness = 1;
-    private final int spokes = 8;
-    private final Material runeMaterial = Material.REDSTONE_WIRE;
-
-    // 5 minutes en ticks
-    private final long despawnDelay = 6000L;
-
     public RunePlacer(Deepstone plugin) {
         this.plugin = plugin;
     }
 
     public void placeNordicDeath(Location deathLoc) {
         if (deathLoc == null || deathLoc.getWorld() == null) return;
+
+        // ✅ config
+        if (!plugin.getConfig().getBoolean("runes.enabled", true)) return;
+
+        int radius = plugin.getConfig().getInt("runes.radius", 15);
+        int ringThickness = plugin.getConfig().getInt("runes.ring-thickness", 1);
+        int spokes = plugin.getConfig().getInt("runes.spokes", 8);
+
+        String matName = plugin.getConfig().getString("runes.material", "REDSTONE_WIRE");
+        Material runeMaterial = Material.matchMaterial(matName == null ? "REDSTONE_WIRE" : matName);
+        if (runeMaterial == null) runeMaterial = Material.REDSTONE_WIRE;
+
+        long despawnSeconds = plugin.getConfig().getLong("runes.despawn-seconds", 300L);
+        long despawnDelayTicks = Math.max(1L, despawnSeconds * 20L);
 
         World world = deathLoc.getWorld();
         int cx = deathLoc.getBlockX();
@@ -49,7 +54,6 @@ public class RunePlacer {
         // ANNEAU
         for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
-
                 int d2 = x * x + z * z;
                 if (d2 > rOuter2 || d2 < rInner2) continue;
 
@@ -59,7 +63,7 @@ public class RunePlacer {
                 int groundY = findGroundY(world, bx, cy, bz);
                 if (groundY == Integer.MIN_VALUE) continue;
 
-                tryPlace(world, bx, groundY + 1, bz, placedBlocks);
+                tryPlace(world, bx, groundY + 1, bz, runeMaterial, placedBlocks);
             }
         }
 
@@ -76,24 +80,25 @@ public class RunePlacer {
 
                 if (rng.nextDouble() < 0.20) continue;
 
-                tryPlace(world, bx, groundY + 1, bz, placedBlocks);
+                tryPlace(world, bx, groundY + 1, bz, runeMaterial, placedBlocks);
             }
         }
 
-        // 🔥 SUPPRESSION APRÈS 5 MINUTES
+        // 🔥 SUPPRESSION APRÈS N SECONDES
+        Material finalRuneMaterial = runeMaterial;
         new BukkitRunnable() {
             @Override
             public void run() {
                 for (Block block : placedBlocks) {
-                    if (block.getType() == runeMaterial) {
+                    if (block.getType() == finalRuneMaterial) {
                         block.setType(Material.AIR, false);
                     }
                 }
             }
-        }.runTaskLater(plugin, despawnDelay);
+        }.runTaskLater(plugin, despawnDelayTicks);
     }
 
-    private void tryPlace(World world, int x, int y, int z, Set<Block> placedBlocks) {
+    private void tryPlace(World world, int x, int y, int z, Material runeMaterial, Set<Block> placedBlocks) {
         if (y < world.getMinHeight() || y >= world.getMaxHeight()) return;
 
         Block target = world.getBlockAt(x, y, z);

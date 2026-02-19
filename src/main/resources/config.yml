@@ -92,3 +92,61 @@ discord:
   enabled: true
   webhook-url: "https://discord.com/api/webhooks/1471593171044536404/jmRM7c76YpYDybd8gY8zRs4jdWeV24x4nCN-SqePLrTP__8yG5VSimIzpSlMcgyTSCPE"
   mention-role-id: "1397967686410961026"   # optionnel, ex: "1234567890"
+
+villager-trade-limiter:
+  enabled: true
+
+  enchanted-book:
+    enabled: true
+    cooldown-seconds: 3600
+    message: "§7[§e?§7] Vous devez attendre avant d'acheter un autre livre enchanté !"
+
+  max-uses:
+    enabled: true
+    diamond-items-max-uses: 1
+    cheap-items-max-uses: 5
+
+trade-hours:
+  enabled: true
+
+  # Heures Minecraft (0-23). Exemple: 7 = 07h, 19 = 19h
+  start-hour: 7
+  end-hour: 19
+
+  # Si true => Msg.broadcast(), sinon message uniquement au joueur
+  broadcast: true
+
+  message: "&7[§e?&7] Les échanges avec les villageois sont autorisés uniquement de &d%start%h& à &b%end%h&."
+
+runes:
+  enabled: true
+
+  # Placement selon claims (GriefPrevention)
+  griefprevention:
+    block-admin-claims: true
+    block-player-claims: false
+
+  # Uniquement si le mob est tué par un joueur
+  require-player-kill: true
+
+  # Si true => seulement les mobs hostiles (Monster)
+  only-hostile-mobs: true
+
+  # Style des runes
+  radius: 15
+  ring-thickness: 1
+  spokes: 8
+  material: REDSTONE_WIRE
+
+  # Despawn en secondes (ex: 300 = 5 min)
+  despawn-seconds: 300
+
+claim-actionbar:
+  enabled: true
+  protected-message: "&aZone Protégé"
+  unprotected-message: "&cZone non protégé"
+
+zombie-villager-boost:
+  enabled: true
+  extra-chance-percent: 5.0   # +5%
+  only-natural-spawns: true   # uniquement NATURAL/CHUNK_GEN (recommandé)

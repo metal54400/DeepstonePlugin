@@ -7,34 +7,57 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class TradeHours implements Listener {
-    private static final int START = 7;
-    private static final int END = 19;
+
+    private final JavaPlugin plugin;
+
+    public TradeHours(JavaPlugin plugin) {
+        this.plugin = plugin;
+    }
+
     @EventHandler
     public void onInteractVillager(PlayerInteractEntityEvent event) {
         if (event.getRightClicked().getType() != EntityType.VILLAGER) return;
 
+        // ✅ Toggle dans config
+        if (!plugin.getConfig().getBoolean("trade-hours.enabled", true)) return;
+
+        int start = plugin.getConfig().getInt("trade-hours.start-hour", 7);
+        int end = plugin.getConfig().getInt("trade-hours.end-hour", 19);
+
         Player player = event.getPlayer();
         World world = player.getWorld();
 
-        // Heure Minecraft: 0..23999 ticks (0 = 06:00)
         long time = world.getTime();
         int hour = minecraftHour(time);
 
-        // Autorisé de 07:00 inclus à 19:00 exclus (tu peux ajuster)
-        if (hour < START || hour >= END) {
+        // Autorisé de start inclus à end exclus
+        if (hour < start || hour >= end) {
             event.setCancelled(true);
-            Msg.broadcast("&7[§e?&7] Les échanges avec les villageois sont autorisés uniquement de &d07h& à &b19h.");
+
+            String msg = plugin.getConfig().getString(
+                    "trade-hours.message",
+                    "&7[§e?&7] Les échanges avec les villageois sont autorisés uniquement de &d%start%h& à &b%end%h&."
+            );
+
+            msg = msg.replace("%start%", String.valueOf(start))
+                    .replace("%end%", String.valueOf(end));
+
+            boolean broadcast = plugin.getConfig().getBoolean("trade-hours.broadcast", true);
+
+            if (broadcast) {
+                Msg.broadcast(msg);
+            } else {
+                Msg.send(player, msg);
+            }
         }
     }
 
-    // Conversion simple ticks -> heure (approx)
     // Minecraft: 0 tick = 06:00, 1000 ticks = 1h
     private int minecraftHour(long ticks) {
-        // on ramène 0..23999
         ticks = ticks % 24000;
-        // 0 = 06:00, donc heure = (ticks/1000 + 6) % 24
-        return (int)((ticks / 1000 + 6) % 24);
+        return (int) ((ticks / 1000 + 6) % 24);
     }
 }

@@ -2,6 +2,7 @@ package fr.deepstonestudio.deepstone;
 
 import fr.deepstonestudio.deepstone.Commands.*;
 import fr.deepstonestudio.deepstone.Listener.*;
+import fr.deepstonestudio.deepstone.Manager.BlessingManager;
 import fr.deepstonestudio.deepstone.Manager.CapitalManager;
 import fr.deepstonestudio.deepstone.Manager.ProtectionManager;
 import fr.deepstonestudio.deepstone.api.AFK.AfkService;
@@ -38,6 +39,10 @@ public final class Deepstone extends JavaPlugin {
     public static Deepstone instance;
     private Economy economy; // peut rester null
     private final Map<UUID, Long> sacrificeMap = new HashMap<>();
+    private final Map<UUID, String> priereDeathCauseMap = new HashMap<>();
+
+    private BlessingManager blessingManager;
+
 
     @Override
     public void onEnable() {
@@ -46,6 +51,8 @@ public final class Deepstone extends JavaPlugin {
         this.protectionManager = new ProtectionManager(this, 15 * 60);
         protectionManager.startCleanupTask();
         saveDefaultConfig();
+
+        blessingManager = new BlessingManager(this);
 
         WarService warService = new WarService();
         GloryService gloryService = new GloryService(this);
@@ -93,7 +100,9 @@ public final class Deepstone extends JavaPlugin {
         } else {
             getLogger().severe("Commande /war manquante dans plugin.yml");
         }
-        getCommand("priere").setExecutor(new PriereCommand(economy, sacrificeMap));
+        getCommand("priere").setExecutor(
+                new PriereCommand(economy, sacrificeMap, priereDeathCauseMap, blessingManager)
+        );
         MercenaryCommand mercCmd = new MercenaryCommand(mercService);
         getCommand("mercenary").setExecutor(mercCmd);
         getCommand("mercenary").setTabCompleter(mercCmd);
@@ -109,9 +118,9 @@ public final class Deepstone extends JavaPlugin {
 
         // ===== Events =====
         getServer().getPluginManager().registerEvents(new CommandBlockListener(), this);
-        getServer().getPluginManager().registerEvents(new VillagerTradeLimiter(), this);
+        getServer().getPluginManager().registerEvents(new VillagerTradeLimiter(this), this);
         getServer().getPluginManager().registerEvents(new RaidListener(), this);
-        getServer().getPluginManager().registerEvents(new TradeHours(), this);
+        getServer().getPluginManager().registerEvents(new TradeHours(this), this);
         getServer().getPluginManager().registerEvents(new CreativeItemLoreListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportListener(protectionManager, 2.5), this);
         getServer().getPluginManager().registerEvents(new PvpListener(protectionManager), this);
@@ -125,6 +134,13 @@ public final class Deepstone extends JavaPlugin {
                 new WarListener(this.clans, warService, gloryService),
                 this
         );
+        getServer().getPluginManager().registerEvents(new PriereDeathListener(priereDeathCauseMap), this);
+        getServer().getPluginManager().registerEvents(new BlessingListener(blessingManager), this);
+        getServer().getPluginManager().registerEvents(new ClaimActionbarListener(this), this);
+        getServer().getPluginManager().registerEvents(new ZombieVillagerBoostListener(this), this);
+
+        // Nettoyage périodique des bénédictions expirées (toutes les 5 minutes)
+        getServer().getScheduler().runTaskTimer(this, () -> blessingManager.cleanupExpired(true), 20L * 60L, 20L * 60L * 5L);
         var capital = new CapitalManager(this, clans);
         getServer().getPluginManager().registerEvents(capital, this);
         capital.start();
@@ -202,10 +218,6 @@ public final class Deepstone extends JavaPlugin {
         } else {
             getLogger().info("PlaceholderAPI non présent: aucun placeholder enregistré.");
         }
-
-
-
-
 
         getLogger().info("Deepstone activé !");
         getLogger().info("DeepstoneClans activé.");
