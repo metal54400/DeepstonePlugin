@@ -5,22 +5,22 @@ import fr.deepstonestudio.deepstone.Manager.RuneProtectionManager;
 import fr.deepstonestudio.deepstone.util.RunePlacer;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
 
 public class DeathListener implements Listener {
-    private final RuneProtectionManager runeProtection;
-    private final RunePlacer runePlacer;
+
     private final Deepstone plugin;
-    public DeathListener(RuneProtectionManager runeProtection1, RuneProtectionManager runeProtection, Deepstone plugin) {
-        this.runeProtection = runeProtection1;
-        this.runePlacer = new RunePlacer(plugin,runeProtection);
+    private final RunePlacer runePlacer;
+
+    public DeathListener(Deepstone plugin, RuneProtectionManager runeProtection) {
         this.plugin = plugin;
+        this.runePlacer = new RunePlacer(plugin, runeProtection);
     }
 
     @EventHandler
@@ -41,15 +41,20 @@ public class DeathListener implements Listener {
         Location loc = event.getEntity().getLocation();
         if (loc.getWorld() == null) return;
 
-        // GriefPrevention checks
-        boolean blockAdmin = plugin.getConfig().getBoolean("runes.griefprevention.block-admin-claims", true);
-        boolean blockPlayer = plugin.getConfig().getBoolean("runes.griefprevention.block-player-claims", false);
+        // ✅ GriefPrevention checks (optionnel)
+        if (plugin.getConfig().getBoolean("runes.griefprevention.enabled", true)
+                && Bukkit.getPluginManager().getPlugin("GriefPrevention") != null
+                && Bukkit.getPluginManager().getPlugin("GriefPrevention").isEnabled()) {
 
-        if (blockAdmin || blockPlayer) {
-            Claim claim = GriefPrevention.instance.dataStore.getClaimAt(loc, true, null);
-            if (claim != null) {
-                if (claim.isAdminClaim() && blockAdmin) return;
-                if (!claim.isAdminClaim() && blockPlayer) return;
+            boolean blockAdmin = plugin.getConfig().getBoolean("runes.griefprevention.block-admin-claims", true);
+            boolean blockPlayer = plugin.getConfig().getBoolean("runes.griefprevention.block-player-claims", false);
+
+            if (blockAdmin || blockPlayer) {
+                Claim claim = GriefPrevention.instance.dataStore.getClaimAt(loc, true, null);
+                if (claim != null) {
+                    if (claim.isAdminClaim() && blockAdmin) return;
+                    if (!claim.isAdminClaim() && blockPlayer) return;
+                }
             }
         }
 
