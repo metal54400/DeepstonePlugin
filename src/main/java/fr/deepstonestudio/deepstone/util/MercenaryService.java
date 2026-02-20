@@ -99,7 +99,7 @@ public final class MercenaryService {
 
         int clanGlory = employer.getGlory();
         if (clanGlory <= 0) {
-            mercenary.sendMessage(Msg.err("Ton clan employeur n’a plus de gloire. Contrat terminé."));
+            mercenary.sendMessage(Msg.error("Ton clan employeur n’a plus de gloire. Contrat terminé."));
             contracts.remove(u);
             return;
         }

@@ -1,6 +1,7 @@
 package fr.deepstonestudio.deepstone.Listener;
 
 import fr.deepstonestudio.deepstone.Deepstone;
+import fr.deepstonestudio.deepstone.Manager.RuneProtectionManager;
 import fr.deepstonestudio.deepstone.util.RunePlacer;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
@@ -13,10 +14,11 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
 public class DeathListener implements Listener {
+    private final RuneProtectionManager runeProtection;
     private final RunePlacer runePlacer;
     private final Deepstone plugin;
-    public DeathListener(Deepstone plugin) {
-        this.runePlacer = new RunePlacer(plugin);
+    public DeathListener(RuneProtectionManager runeProtection, Deepstone plugin) {
+        this.runePlacer = new RunePlacer(plugin,runeProtection);
         this.plugin = plugin;
     }
 
