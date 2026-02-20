@@ -127,7 +127,7 @@ public final class Deepstone extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CreativeItemLoreListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportListener(protectionManager, 2.5), this);
         getServer().getPluginManager().registerEvents(new PvpListener(protectionManager), this);
-        getServer().getPluginManager().registerEvents(new DeathListener(runeProtection, this), this);
+        getServer().getPluginManager().registerEvents(new DeathListener(this, runeProtection), this);
         getServer().getPluginManager().registerEvents(new ClanFriendlyFireListener(clans,mercService), this);
         getServer().getPluginManager().registerEvents(new ClanChatListener(this, clans), this);
         getServer().getPluginManager().registerEvents(new SacrificeListener(sacrificeMap), this);
