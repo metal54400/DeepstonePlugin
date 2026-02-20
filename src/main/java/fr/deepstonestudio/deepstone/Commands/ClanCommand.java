@@ -38,7 +38,6 @@ public final class ClanCommand implements CommandExecutor, TabCompleter {
                 p.sendMessage(Msg.info("/clan list"));
                 p.sendMessage(Msg.info("/clan setcapital"));
 
-
                 // ✅ Diplomatie
                 p.sendMessage(Msg.info("/clan ally <clan>"));
                 p.sendMessage(Msg.info("/clan truce <clan>"));
@@ -81,7 +80,7 @@ public final class ClanCommand implements CommandExecutor, TabCompleter {
                     if (t == null) throw new IllegalStateException("Joueur introuvable/ hors-ligne.");
                     clans.kick(p, t);
                     p.sendMessage(Msg.ok("Joueur expulsé: " + t.getName()));
-                    t.sendMessage(Msg.err("Tu as été expulsé du clan."));
+                    t.sendMessage(Msg.error("Tu as été expulsé du clan."));
                 }
                 case "role" -> {
                     if (args.length < 3) throw new IllegalStateException("Usage: /clan role <joueur> <WARRIOR|PEASANT>");
@@ -119,9 +118,7 @@ public final class ClanCommand implements CommandExecutor, TabCompleter {
                     p.sendMessage(Msg.info("Alliés: " + (c.getAllies().isEmpty() ? "—" : String.join(", ", c.getAllies()))));
                     p.sendMessage(Msg.info("Trêves: " + (c.getTruces().isEmpty() ? "—" : String.join(", ", c.getTruces()))));
                 }
-                case "list" -> {
-                    p.sendMessage(Msg.info("Clans: " + String.join(", ", clans.clanNames())));
-                }
+                case "list" -> p.sendMessage(Msg.info("Clans: " + String.join(", ", clans.clanNames())));
 
                 // ✅ Diplomatie
                 case "ally" -> {
@@ -146,21 +143,21 @@ public final class ClanCommand implements CommandExecutor, TabCompleter {
                     boolean on = clans.toggleClanChat(p.getUniqueId());
                     p.sendMessage(Msg.ok("Chat clan " + (on ? "activé" : "désactivé") + "."));
                 }
+
                 case "setcapital" -> {
                     clans.setCapital(p);
                     var c = clans.getClanOf(p.getUniqueId());
                     p.sendMessage(Msg.ok("Capitale définie pour " + c.getDisplayName() + " (coeur posé sous tes pieds)."));
                 }
 
-                default -> p.sendMessage(Msg.err("Commande inconnue. /clan help"));
+                default -> p.sendMessage(Msg.error("Commande inconnue. /clan help"));
             }
 
-            // autosave léger
-            clans.saveAll();
+            clans.saveAll(); // autosave léger
             return true;
 
         } catch (Exception e) {
-            p.sendMessage(Msg.err(e.getMessage() == null ? "Erreur." : e.getMessage()));
+            p.sendMessage(Msg.error(e.getMessage() == null ? "Erreur." : e.getMessage()));
             return true;
         }
     }
@@ -176,7 +173,7 @@ public final class ClanCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             return filter(List.of(
                     "help","create","disband","invite","join","leave","kick","role",
-                    "setking","setjarl","info","list",
+                    "setking","setjarl","info","list","setcapital",
                     "ally","truce","breakalliance","chat"
             ), args[0]);
         }

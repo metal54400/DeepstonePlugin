@@ -1,6 +1,5 @@
 package fr.deepstonestudio.deepstone.Commands;
 
-
 import fr.deepstonestudio.deepstone.Manager.BlessingManager;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.*;
@@ -22,7 +21,7 @@ public class PriereCommand implements CommandExecutor {
     private final Map<UUID, Long> priereCooldownMap = new HashMap<>();
     private final Random random = new Random();
 
-    private static final long COOLDOWN_MS = 60L * 60L * 1000L; // 1 heure
+    private static final long COOLDOWN_MS = 24L * 60L * 60L * 1000L; // 24 heures
 
     public PriereCommand(Economy economy,
                          Map<UUID, Long> sacrificeMap,
@@ -42,12 +41,59 @@ public class PriereCommand implements CommandExecutor {
             return true;
         }
 
+        if (args.length == 0) {
+            player.sendMessage("§7[§c!§7] Usage: /priere <thor|odin|loki|freya|frey|status|clear>");
+            return true;
+        }
+
+        String sub = args[0].toLowerCase(Locale.ROOT);
+
+        // ✅ /priere status
+        if (sub.equals("status")) {
+            long remaining = blessingManager.getRemainingMs(player.getUniqueId());
+            if (remaining <= 0) {
+                player.sendMessage("§7[§e?§7] Tu n’as aucune bénédiction active.");
+            } else {
+                player.sendMessage("§7[§e?§7] Bénédiction active : §6" + formatDuration(remaining) + "§7 restantes.");
+            }
+            return true;
+        }
+
+        // ✅ /priere clear <joueur> (admin)
+        if (sub.equals("clear")) {
+            if (!player.hasPermission("deepstone.priere.admin")) {
+                player.sendMessage("§7[§c!§7] Tu n’as pas la permission.");
+                return true;
+            }
+
+            if (args.length < 2) {
+                player.sendMessage("§7[§c!§7] Usage: /priere clear <joueur>");
+                return true;
+            }
+
+            Player target = Bukkit.getPlayerExact(args[1]);
+            if (target == null) {
+                player.sendMessage("§7[§c!§7] Joueur introuvable ou hors-ligne.");
+                return true;
+            }
+
+            boolean removed = blessingManager.clearBlessing(target.getUniqueId());
+            if (removed) {
+                player.sendMessage("§7[§e?§7] Bénédiction retirée à §e" + target.getName() + "§7.");
+                target.sendMessage("§7[§c!§7] Ta bénédiction a été retirée par un admin.");
+            } else {
+                player.sendMessage("§7[§e?§7] §e" + target.getName() + "§7 n’a aucune bénédiction active.");
+            }
+            return true;
+        }
+
+        // ✅ Sinon: prière classique /priere <dieu>
         if (args.length != 1) {
             player.sendMessage("§7[§c!§7] Usage: /priere <thor|odin|loki|freya|frey>");
             return true;
         }
 
-        String god = args[0].toLowerCase(Locale.ROOT);
+        String god = sub;
         if (!List.of("thor", "odin", "loki", "freya", "frey").contains(god)) {
             player.sendMessage("§7[§c!§7] Dieu invalide.");
             return true;
@@ -148,6 +194,7 @@ public class PriereCommand implements CommandExecutor {
 
     /**
      * 🧪 Effets RP par dieu, durée 24h IRL, persistants même après mort + reboot.
+     * On donne des effets "modèles" (durée courte) : BlessingManager gère la persistance.
      */
     private void rewardBlessing24h(Player player, String god) {
         String g = god.toLowerCase(Locale.ROOT);
@@ -177,7 +224,6 @@ public class PriereCommand implements CommandExecutor {
             }
 
             case "freya" -> {
-                // ⚠️ Très fort sur 24h comme demandé
                 effects = List.of(
                         new PotionEffect(PotionEffectType.REGENERATION, 20, 0, false, true, true),
                         new PotionEffect(PotionEffectType.ABSORPTION, 20, 1, false, true, true)
@@ -188,7 +234,7 @@ public class PriereCommand implements CommandExecutor {
             }
 
             case "frey" -> {
-                // SATURATION existe en versions modernes ; sinon dis-moi ta version et je te mets une alternative.
+                // SATURATION existe en versions modernes
                 effects = List.of(
                         new PotionEffect(PotionEffectType.SATURATION, 20, 0, false, true, true),
                         new PotionEffect(PotionEffectType.HASTE, 20, 1, false, true, true)
@@ -202,7 +248,6 @@ public class PriereCommand implements CommandExecutor {
                 int r = random.nextInt(100);
 
                 if (r < 35) {
-                    // Malédiction 24h (on garde la nausée courte sinon injouable)
                     effects = List.of(
                             new PotionEffect(PotionEffectType.SLOWNESS, 20, 0, false, true, true),
                             new PotionEffect(PotionEffectType.WEAKNESS, 20, 0, false, true, true),
@@ -212,7 +257,6 @@ public class PriereCommand implements CommandExecutor {
                     player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_SCREAM, 0.6f, 1.0f);
                     player.sendMessage("§7[§c!§7] §cLOKI §7rit… et te maudit pour §61 journée§7.");
                 } else if (r < 75) {
-                    // Mix
                     effects = List.of(
                             new PotionEffect(PotionEffectType.SPEED, 20, 1, false, true, true),
                             new PotionEffect(PotionEffectType.HUNGER, 20, 0, false, true, true)
@@ -221,7 +265,6 @@ public class PriereCommand implements CommandExecutor {
                     player.getWorld().playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.8f, 1.2f);
                     player.sendMessage("§7[§e?§7] §eLOKI §7t’aide… mais pas gratuitement. §8(§61 journée§8)");
                 } else {
-                    // Bon
                     effects = List.of(
                             new PotionEffect(PotionEffectType.INVISIBILITY, 20, 0, false, true, true),
                             new PotionEffect(PotionEffectType.SPEED, 20, 0, false, true, true)
@@ -238,9 +281,8 @@ public class PriereCommand implements CommandExecutor {
             }
         }
 
-        // 🔥 Stockage persistant 24h + application réelle de la durée via timestamp
+        // ✅ Stockage persistant 24h + réapplication via BlessingManager
         blessingManager.setBlessing(player, effects, BlessingManager.DAY_MS);
-        // (manager applique immédiatement avec la vraie durée restante)
     }
 
     private void punish(Player player, String god) {

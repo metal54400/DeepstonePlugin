@@ -7,7 +7,10 @@ import fr.deepstonestudio.deepstone.util.GloryService;
 import fr.deepstonestudio.deepstone.util.WarService;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.*;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
@@ -23,31 +26,39 @@ public class WarListener implements Listener {
         this.glory = glory;
     }
 
-    @EventHandler
+    /**
+     * ✅ Important:
+     * - HIGHEST + ignoreCancelled = false => on peut "débloquer" après GriefPrevention
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onDamage(EntityDamageByEntityEvent event) {
-
         if (!(event.getEntity() instanceof Player victim)) return;
-        if (!(event.getDamager() instanceof Player attacker)) return;
 
-        Clan c1 = clans.getClanOf(victim.getUniqueId());
-        Clan c2 = clans.getClanOf(attacker.getUniqueId());
+        Player attacker = getAttacker(event);
+        if (attacker == null) return;
 
-        if (c1 == null || c2 == null) return;
+        Clan victimClan = clans.getClanOf(victim.getUniqueId());
+        Clan attackerClan = clans.getClanOf(attacker.getUniqueId());
+        if (victimClan == null || attackerClan == null) return;
 
-        if (c1 == c2) {
-            event.setCancelled(true); // Friendly fire off
+        // ✅ Friendly fire OFF (même clan)
+        if (victimClan.getName().equalsIgnoreCase(attackerClan.getName())) {
+            event.setCancelled(true);
             return;
         }
 
-        War war = wars.getWar(c1.getName());
-        if (war == null) {
-            event.setCancelled(true); // pas de guerre = pas de pvp clan
+        // ✅ PvP autorisé uniquement si guerre entre ces 2 clans
+        if (areAtWarTogether(victimClan.getName(), attackerClan.getName())) {
+            // Si GP (ou autre) a annulé dans un claim => on ré-autorise
+            event.setCancelled(false);
+        } else {
+            // pas en guerre => pas de PvP clan
+            event.setCancelled(true);
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onDeath(PlayerDeathEvent event) {
-
         Player dead = event.getEntity();
         Player killer = dead.getKiller();
         if (killer == null) return;
@@ -56,8 +67,8 @@ public class WarListener implements Listener {
         Clan killerClan = clans.getClanOf(killer.getUniqueId());
         if (deadClan == null || killerClan == null) return;
 
-        War war = wars.getWar(deadClan.getName());
-        if (war == null) return;
+        // On ne compte que si ils sont vraiment en guerre
+        if (!areAtWarTogether(deadClan.getName(), killerClan.getName())) return;
 
         glory.add(killer.getUniqueId(), 10);
         glory.remove(dead.getUniqueId(), 5);
@@ -75,7 +86,63 @@ public class WarListener implements Listener {
             deadClan.addGlory(-50);
             killerClan.addGlory(100);
 
-            wars.endWar(war);
+            War war = wars.getWar(deadClan.getName());
+            if (war != null) {
+                wars.endWar(war);
+            }
         }
+    }
+
+    /* ========================= */
+    /*           UTILS           */
+    /* ========================= */
+
+    private Player getAttacker(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Player p) return p;
+
+        if (event.getDamager() instanceof Projectile proj) {
+            if (proj.getShooter() instanceof Player p) return p;
+        }
+
+        return null;
+    }
+
+    /**
+     * True si clanA et clanB sont dans la même guerre.
+     * On utilise ton wars.getWar(clanName) et on vérifie que l'autre clan est dans cette war.
+     *
+     * ⚠️ Comme je n’ai pas ta classe War, je teste avec des getters courants :
+     * - getAttacker()/getDefender()
+     * - clan1/clan2
+     * Adapte si besoin.
+     */
+    private boolean areAtWarTogether(String clanA, String clanB) {
+        War war = wars.getWar(clanA);
+        if (war == null) return false;
+
+        // 👉 ADAPTE ces 2 lignes selon ton modèle War
+        String w1 = getWarClan1(war);
+        String w2 = getWarClan2(war);
+
+        if (w1 == null || w2 == null) return false;
+
+        boolean aIn = w1.equalsIgnoreCase(clanA) || w2.equalsIgnoreCase(clanA);
+        boolean bIn = w1.equalsIgnoreCase(clanB) || w2.equalsIgnoreCase(clanB);
+        return aIn && bIn;
+    }
+
+    // ✅ Helpers pour éviter de casser si ton War n’a pas les mêmes noms
+    private String getWarClan1(War war) {
+        try { return (String) war.getClass().getMethod("getClan1").invoke(war); } catch (Exception ignored) {}
+        try { return (String) war.getClass().getMethod("getAttacker").invoke(war); } catch (Exception ignored) {}
+        try { return (String) war.getClass().getMethod("getA").invoke(war); } catch (Exception ignored) {}
+        return null;
+    }
+
+    private String getWarClan2(War war) {
+        try { return (String) war.getClass().getMethod("getClan2").invoke(war); } catch (Exception ignored) {}
+        try { return (String) war.getClass().getMethod("getDefender").invoke(war); } catch (Exception ignored) {}
+        try { return (String) war.getClass().getMethod("getB").invoke(war); } catch (Exception ignored) {}
+        return null;
     }
 }

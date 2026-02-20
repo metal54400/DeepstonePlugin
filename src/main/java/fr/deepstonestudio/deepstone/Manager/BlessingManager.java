@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,10 +24,13 @@ public class BlessingManager {
     // UUID -> BlessingData
     private final Map<UUID, BlessingData> blessings = new HashMap<>();
 
+    private BukkitTask upkeepTask;
+
     public BlessingManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "blessings.yml");
         reload();
+        startUpkeepTask();
     }
 
     /* ================================================== */
@@ -166,6 +170,44 @@ public class BlessingManager {
         applyBlessingNow(player);
     }
 
+    /**
+     * ✅ Temps restant en ms (0 si pas de bénédiction ou expirée)
+     */
+    public long getRemainingMs(UUID uuid) {
+        BlessingData data = blessings.get(uuid);
+        if (data == null) return 0L;
+        long remaining = data.expiresAtMs - System.currentTimeMillis();
+        return Math.max(0L, remaining);
+    }
+
+    /**
+     * ✅ Expiration exacte (null si pas de bénédiction)
+     */
+    public Long getExpiresAt(UUID uuid) {
+        BlessingData data = blessings.get(uuid);
+        return data == null ? null : data.expiresAtMs;
+    }
+
+    /**
+     * ✅ Retire la bénédiction d’un joueur (return true si une bénédiction existait)
+     */
+    public boolean clearBlessing(UUID uuid) {
+        BlessingData removed = blessings.remove(uuid);
+        if (removed == null) return false;
+
+        // Retire les effets de potion immédiatement si le joueur est en ligne
+        Player p = Bukkit.getPlayer(uuid);
+        if (p != null && p.isOnline()) {
+            for (PotionSpec spec : removed.effects) {
+                PotionEffectType type = PotionEffectType.getByName(spec.type);
+                if (type != null) p.removePotionEffect(type);
+            }
+        }
+
+        save();
+        return true;
+    }
+
     public void applyBlessingNow(Player player) {
         BlessingData data = blessings.get(player.getUniqueId());
         if (data == null) return;
@@ -177,7 +219,9 @@ public class BlessingManager {
             return;
         }
 
-        int remainingTicks = (int) Math.max(20, Math.min(Integer.MAX_VALUE, (remainingMs / 1000L) * 20L));
+        // ⚠️ Sécurité: (ms -> ticks), cap à int max, minimum 20 ticks
+        long ticksLong = (remainingMs / 1000L) * 20L;
+        int remainingTicks = (int) Math.max(20L, Math.min((long) Integer.MAX_VALUE, ticksLong));
 
         for (PotionSpec spec : data.effects) {
             PotionEffectType type = PotionEffectType.getByName(spec.type);
@@ -209,6 +253,37 @@ public class BlessingManager {
     public boolean hasBlessing(UUID uuid) {
         BlessingData data = blessings.get(uuid);
         return data != null && data.expiresAtMs > System.currentTimeMillis();
+    }
+
+    /* ================================================== */
+    /*                AUTO UPKEEP (OPTION)                */
+    /* ================================================== */
+
+    /**
+     * Réapplique aux joueurs connectés + nettoie les expirées.
+     * Utile après mort / relog / certains resets d'effets.
+     */
+    private void startUpkeepTask() {
+        if (upkeepTask != null) upkeepTask.cancel();
+
+        upkeepTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            cleanupExpired(false);
+
+            for (UUID uuid : new ArrayList<>(blessings.keySet())) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null && p.isOnline()) {
+                    applyBlessingNow(p);
+                }
+            }
+        }, 40L, 40L); // toutes les 2 secondes
+    }
+
+    /**
+     * À appeler dans onDisable()
+     */
+    public void shutdown() {
+        if (upkeepTask != null) upkeepTask.cancel();
+        save();
     }
 
     /* ================================================== */

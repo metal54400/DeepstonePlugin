@@ -25,12 +25,12 @@ public final class ClanFriendlyFireListener implements Listener {
 
         if (clans.areAllies(a.getUniqueId(), b.getUniqueId())) {
             e.setCancelled(true);
-            a.sendMessage(Msg.err("Tu ne peux pas frapper un allié."));
+            a.sendMessage(Msg.error("Tu ne peux pas frapper un allié."));
         }
 
         if (mercs.isFriendly(a.getUniqueId(), b.getUniqueId())) {
             e.setCancelled(true);
-            a.sendMessage(Msg.err("Tu ne peux pas frapper un allié (mercenariat)."));
+            a.sendMessage(Msg.error("Tu ne peux pas frapper un allié (mercenariat)."));
         }
     }
     @EventHandler

@@ -1,6 +1,7 @@
 package fr.deepstonestudio.deepstone.util;
 
 import fr.deepstonestudio.deepstone.Deepstone;
+import fr.deepstonestudio.deepstone.Manager.RuneProtectionManager;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -12,10 +13,12 @@ import java.util.Set;
 public class RunePlacer {
 
     private final Deepstone plugin;
+    private final RuneProtectionManager runeProtection;
     private final Random rng = new Random();
 
-    public RunePlacer(Deepstone plugin) {
+    public RunePlacer(Deepstone plugin, RuneProtectionManager runeProtection) {
         this.plugin = plugin;
+        this.runeProtection = runeProtection;
     }
 
     public void placeNordicDeath(Location deathLoc) {
@@ -91,6 +94,8 @@ public class RunePlacer {
             public void run() {
                 for (Block block : placedBlocks) {
                     if (block.getType() == finalRuneMaterial) {
+                        // ✅ retire protection
+                        runeProtection.unmarkRune(block);
                         block.setType(Material.AIR, false);
                     }
                 }
@@ -107,6 +112,9 @@ public class RunePlacer {
         if (target.getType().isAir() && below.getType().isSolid()) {
             target.setType(runeMaterial, false);
             placedBlocks.add(target);
+
+            // ✅ marque comme rune (incassable via listener)
+            runeProtection.markRune(target);
         }
     }
 

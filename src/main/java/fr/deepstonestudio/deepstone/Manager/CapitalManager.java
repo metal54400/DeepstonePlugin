@@ -70,7 +70,7 @@ public final class CapitalManager implements Listener, Runnable {
                 // Interdire au clan propriétaire de casser son coeur (optionnel)
                 if (breakerClan != null && breakerClan.getName().equalsIgnoreCase(defended.getName())) {
                     e.setCancelled(true);
-                    breaker.sendMessage(Msg.err("Tu ne peux pas détruire le coeur de ta capitale."));
+                    breaker.sendMessage(Msg.error("Tu ne peux pas détruire le coeur de ta capitale."));
                     return;
                 }
 
@@ -78,7 +78,7 @@ public final class CapitalManager implements Listener, Runnable {
                 defended.removeGlory(gloryLossOnDestroy);
                 defended.setCapital(null);
 
-                Bukkit.broadcastMessage(String.valueOf(Msg.err("🔥 La capitale de " + defended.getDisplayName() + " a été détruite ! (-" + gloryLossOnDestroy + " gloire)")));
+                Bukkit.broadcastMessage(String.valueOf(Msg.error("🔥 La capitale de " + defended.getDisplayName() + " a été détruite ! (-" + gloryLossOnDestroy + " gloire)")));
                 breaker.playSound(breaker.getLocation(), Sound.ENTITY_WITHER_DEATH, 1f, 1f);
 
                 // reset capture state
@@ -215,7 +215,7 @@ public final class CapitalManager implements Listener, Runnable {
 
             // feedback léger au clan défendu (toutes les 5 sec)
             if (st.progress % 5 == 0) {
-                broadcastToClan(defended, String.valueOf(Msg.err("⚠ Capitale attaquée ! Capture: " + st.progress + "/" + captureSeconds + " sec")));
+                broadcastToClan(defended, String.valueOf(Msg.error("⚠ Capitale attaquée ! Capture: " + st.progress + "/" + captureSeconds + " sec")));
             }
 
             if (st.progress >= captureSeconds) {

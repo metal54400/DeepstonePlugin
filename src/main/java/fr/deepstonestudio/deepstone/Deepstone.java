@@ -5,12 +5,11 @@ import fr.deepstonestudio.deepstone.Listener.*;
 import fr.deepstonestudio.deepstone.Manager.BlessingManager;
 import fr.deepstonestudio.deepstone.Manager.CapitalManager;
 import fr.deepstonestudio.deepstone.Manager.ProtectionManager;
+import fr.deepstonestudio.deepstone.Manager.RuneProtectionManager;
+import fr.deepstonestudio.deepstone.api.*;
 import fr.deepstonestudio.deepstone.api.AFK.AfkService;
 import fr.deepstonestudio.deepstone.api.AFK.Listener.PlayerActivityListener;
-import fr.deepstonestudio.deepstone.api.DeepstoneAfkExpansion;
-import fr.deepstonestudio.deepstone.api.DiscordWebhook;
-import fr.deepstonestudio.deepstone.api.EssentialsHook;
-import fr.deepstonestudio.deepstone.api.ShopPriceListener;
+import fr.deepstonestudio.deepstone.api.updater.GitHubUpdater;
 import fr.deepstonestudio.deepstone.storage.YamlStore;
 import fr.deepstonestudio.deepstone.util.*;
 import net.milkbowl.vault.economy.Economy;
@@ -48,7 +47,7 @@ public final class Deepstone extends JavaPlugin {
     public void onEnable() {
         instance = this;
         economy = setupEconomy();
-        this.protectionManager = new ProtectionManager(this, 15 * 60);
+        this.protectionManager = new ProtectionManager(this);
         protectionManager.startCleanupTask();
         saveDefaultConfig();
 
@@ -74,6 +73,7 @@ public final class Deepstone extends JavaPlugin {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        DeepstoneAPI.init(this);
 
         try {
             this.clans.loadAll();
@@ -117,18 +117,22 @@ public final class Deepstone extends JavaPlugin {
 
 
         // ===== Events =====
+        RuneProtectionManager runeProtection = new RuneProtectionManager();
+        getServer().getPluginManager().registerEvents(new RuneProtectionListener(runeProtection), this);
         getServer().getPluginManager().registerEvents(new CommandBlockListener(), this);
+        getServer().getPluginManager().registerEvents(new MobHeadDropListener(this),this);
         getServer().getPluginManager().registerEvents(new VillagerTradeLimiter(this), this);
-        getServer().getPluginManager().registerEvents(new RaidListener(), this);
+        getServer().getPluginManager().registerEvents(new RaidListener(this), this);
         getServer().getPluginManager().registerEvents(new TradeHours(this), this);
         getServer().getPluginManager().registerEvents(new CreativeItemLoreListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportListener(protectionManager, 2.5), this);
         getServer().getPluginManager().registerEvents(new PvpListener(protectionManager), this);
-        getServer().getPluginManager().registerEvents(new DeathListener(this), this);
+        getServer().getPluginManager().registerEvents(new DeathListener(runeProtection, this), this);
         getServer().getPluginManager().registerEvents(new ClanFriendlyFireListener(clans,mercService), this);
         getServer().getPluginManager().registerEvents(new ClanChatListener(this, clans), this);
         getServer().getPluginManager().registerEvents(new SacrificeListener(sacrificeMap), this);
         getServer().getPluginManager().registerEvents(new ShopPriceListener(), this);
+        getServer().getPluginManager().registerEvents(new DecapitationListener(this), this);
         // IMPORTANT: on passe la même instance de ClanService + war + glory
         getServer().getPluginManager().registerEvents(
                 new WarListener(this.clans, warService, gloryService),
@@ -144,7 +148,7 @@ public final class Deepstone extends JavaPlugin {
         var capital = new CapitalManager(this, clans);
         getServer().getPluginManager().registerEvents(capital, this);
         capital.start();
-
+        RunePlacer runePlacer = new RunePlacer(this, runeProtection);
         //clearLoop.start();
 
         // ===============================
@@ -223,6 +227,24 @@ public final class Deepstone extends JavaPlugin {
         getLogger().info("DeepstoneClans activé.");
         getLogger().info("Deepstone ClearLagg désactivé !");
         getLogger().info("Deepstone AFK activé !");
+        getLogger().info("Deepstone githubupdateer !");
+
+
+        GitHubUpdater updater = new GitHubUpdater(this);
+
+        if (getConfig().getBoolean("updater.check-on-start", true)) {
+            // check async pour ne pas freeze le serveur
+            Bukkit.getScheduler().runTaskAsynchronously(this, () -> updater.checkAndDownloadIfNeeded(Bukkit.getConsoleSender()));
+        }
+
+// check régulier
+        long minutes = getConfig().getLong("updater.check-interval-minutes", 60);
+        if (minutes > 0) {
+            long ticks = minutes * 60L * 20L;
+            Bukkit.getScheduler().runTaskTimerAsynchronously(this,
+                    () -> updater.checkAndDownloadIfNeeded(null),
+                    ticks, ticks);
+        }
     }
 
     private Economy setupEconomy() {
@@ -239,7 +261,6 @@ public final class Deepstone extends JavaPlugin {
     public void onDisable() {
        // if (clearLoop != null) clearLoop.stop();
         if (afkService != null) afkService.stop();
-
         try {
             if (clans != null) clans.saveAll();
         } catch (Exception e) {
@@ -252,9 +273,11 @@ public final class Deepstone extends JavaPlugin {
 
 
 
-    public ProtectionManager getProtectionManager() {
-        return protectionManager;
-    }
+    public ClanService getClans() { return clans; }
+    public WarService getWarService() { return warService; }
+    public GloryService getGloryService() { return gloryService; }
+    public BlessingManager getBlessingManager() { return blessingManager; }
+    public ProtectionManager getProtectionManager() { return protectionManager; }
 
     public static Deepstone getInstance() {
         return instance;

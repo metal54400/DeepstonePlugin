@@ -57,13 +57,13 @@ public final class MercenaryCommand implements CommandExecutor, TabCompleter {
                 case "balance" -> {
                     p.sendMessage(Msg.info("Bourse mercenaire: " + mercs.getWallet(p.getUniqueId()) + " gloire."));
                 }
-                default -> p.sendMessage(Msg.err("Commande inconnue. /mercenary help"));
+                default -> p.sendMessage(Msg.error("Commande inconnue. /mercenary help"));
             }
 
             return true;
 
         } catch (Exception e) {
-            p.sendMessage(Msg.err(e.getMessage() == null ? "Erreur." : e.getMessage()));
+            p.sendMessage(Msg.error(e.getMessage() == null ? "Erreur." : e.getMessage()));
             return true;
         }
     }

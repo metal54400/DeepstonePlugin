@@ -40,6 +40,9 @@ commands:
 
 
 permissions:
+  deepstone.priere.admin:
+    default: op
+
   deepstone.clan.admin:
     description: Gestion des clans Deepstone
     default: op
@@ -59,6 +62,7 @@ permissions:
   deepstone.afk.kickexempt:
     description: Immunisé contre l'auto-kick AFK via DeepstoneAFK (mode sans Essentials).
     default: op
+
   deepstone.rembourse:
     description: Permissions modérateur
     default: op

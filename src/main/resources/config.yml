@@ -150,3 +150,44 @@ zombie-villager-boost:
   enabled: true
   extra-chance-percent: 5.0   # +5%
   only-natural-spawns: true   # uniquement NATURAL/CHUNK_GEN (recommandé)
+
+protection:
+  duration-seconds: 300
+  cleanup-interval-seconds: 60
+  message-enabled: true
+  message: "§7[§e?§7] §aProtection anti-TPKill activée pendant {minutes} minutes ({seconds}s)."
+
+decapitation:
+  enabled: true
+  mark-duration-seconds: 10
+  mark-cooldown-seconds: 2
+  drop-chance-percent: 15
+  require-sneak: true
+  require-axe: true
+  only-villager-types: true
+
+raid:
+  enabled: true
+  cooldown-seconds: 3600  # 1 heure
+  reward:
+    material: TOTEM_OF_UNDYING
+    amount: 2
+  message-cooldown: "§7[§e?§7] Vous devez attendre encore §6{minutes}§7 minutes (§6{seconds}§7s) avant un nouveau raid."
+  message-reward: "§7[§e?§7] §aRécompense de raid reçue: §e{amount}x {item}§7."
+
+mob-heads:
+  enabled: true
+  chance-percent: 5
+  require-sneak: false
+  require-axe: false
+
+updater:
+  enabled: true
+  check-on-start: true
+  check-interval-minutes: 60
+  notify-permission: "deepstone.admin"
+  github:
+    owner: "metal54400"
+    repo: "DeepstonePlugin"
+    # optionnel : si tu veux forcer un nom d'asset spécifique (sinon: prend le 1er .jar)
+    asset-name: ""
