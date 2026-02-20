@@ -17,7 +17,8 @@ public class DeathListener implements Listener {
     private final RuneProtectionManager runeProtection;
     private final RunePlacer runePlacer;
     private final Deepstone plugin;
-    public DeathListener(RuneProtectionManager runeProtection, Deepstone plugin) {
+    public DeathListener(RuneProtectionManager runeProtection1, RuneProtectionManager runeProtection, Deepstone plugin) {
+        this.runeProtection = runeProtection1;
         this.runePlacer = new RunePlacer(plugin,runeProtection);
         this.plugin = plugin;
     }
