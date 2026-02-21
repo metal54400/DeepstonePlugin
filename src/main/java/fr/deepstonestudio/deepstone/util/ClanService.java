@@ -8,6 +8,8 @@ import org.bukkit.entity.Player;
 import java.io.IOException;
 import java.util.*;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 public final class ClanService {
     private final YamlStore store;
     private final boolean gpEnabled;
@@ -21,7 +23,8 @@ public final class ClanService {
     private record Invite(String clan, long expiresAt) {}
 
     // ✅ clan chat toggle
-    private final Set<UUID> clanChat = new HashSet<>();
+
+    private final Set<UUID> clanChat = ConcurrentHashMap.newKeySet();
 
     public ClanService(YamlStore store, boolean gpEnabled) {
         this.store = store;
