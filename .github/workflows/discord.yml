@@ -12,7 +12,7 @@ on:
       prerelease:
         description: "Release en prerelease ? (true/false)"
         required: false
-        default: "false"
+        default: "true"
       upload_jar:
         description: "Attacher le jar à la release ? (true/false)"
         required: false
