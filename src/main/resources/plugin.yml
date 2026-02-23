@@ -19,8 +19,8 @@ softdepend:
 commands:
   commands:
     tips:
-      description: Active/Désactive les messages d'aide automatiques.
-      usage: /tips
+    description: Active/Désactive ou recharge les messages d'aide.
+    usage: /tips | /tips reload
 
   mercenary:
     description: Mercenary commands
