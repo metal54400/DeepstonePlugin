@@ -17,6 +17,11 @@ softdepend:
   - Vault
 
 commands:
+  commands:
+    tips:
+      description: Active/Désactive les messages d'aide automatiques.
+      usage: /tips
+
   mercenary:
     description: Mercenary commands
     usage: /mercenary help
@@ -36,8 +41,13 @@ commands:
     description: Force le nettoyage des items au sol
     usage: /clearlag
 
-
 permissions:
+  deepstone.tips.reload:
+    default: op
+
+  deepstone.tips:
+    default: true
+
   deepstone.admin:
     default: op
   deepstone.priere.admin:

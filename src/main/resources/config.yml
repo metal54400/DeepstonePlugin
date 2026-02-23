@@ -205,3 +205,17 @@ inv-sync:
   # Anti-duplication
   swap-lock-ticks: 8   # durée de blocage actions (drop/pickup/click) pendant le swap
   autosave-seconds: 120
+
+tips:
+  enabled: true
+  interval-seconds: 300
+  prefix: "&f[Server] &7[&e?&7] "
+  random: true
+  messages:
+    - "&7Utilise &e/menu &7pour accéder aux fonctionnalités principales."
+    - "&7L'End est ouvert ! &d/warp end"
+    - "&7Helheim contient des quêtes dangereuses &c/warp helheim"
+    - "&7Vends tes items aux joueurs avec &6/ah"
+    - "&7Besoin d'argent ? Utilise &a/shop"
+    - "&7Rejoins un clan et gagne de la gloire !"
+    - "&7N'oublie pas de voter : &bhttps://deep.deepstone.fr/vote"

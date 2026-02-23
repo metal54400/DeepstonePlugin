@@ -7,6 +7,7 @@ import fr.deepstonestudio.deepstone.api.*;
 import fr.deepstonestudio.deepstone.api.AFK.AfkService;
 import fr.deepstonestudio.deepstone.api.AFK.Listener.PlayerActivityListener;
 import fr.deepstonestudio.deepstone.api.updater.GitHubUpdater;
+import fr.deepstonestudio.deepstone.storage.TipsStore;
 import fr.deepstonestudio.deepstone.storage.YamlStore;
 import fr.deepstonestudio.deepstone.util.*;
 import net.milkbowl.vault.economy.Economy;
@@ -47,6 +48,13 @@ public void onEnable() {
 
     // ===== Detect deps FIRST =====
     economy = setupEconomy();
+        TipsStore tipsStore = new TipsStore(this);
+        tipsStore.load();
+
+        TipsService tipsService = new TipsService(this, tipsStore);
+        tipsService.start();
+
+        getCommand("tips").setExecutor(new TipsCommand(tipsStore, tipsService));
 
     Plugin gp = Bukkit.getPluginManager().getPlugin("GriefPrevention");
     gpEnabled = (gp != null && gp.isEnabled());
