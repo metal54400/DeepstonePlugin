@@ -1,7 +1,7 @@
 package fr.deepstonestudio.deepstone.Listener;
 
-import fr.deepstonestudio.deepstone.model.Clan;
-import fr.deepstonestudio.deepstone.model.War;
+import fr.deepstonestudio.deepstone.model.clan.Clan;
+import fr.deepstonestudio.deepstone.model.clan.War;
 import fr.deepstonestudio.deepstone.util.ClanService;
 import fr.deepstonestudio.deepstone.util.GloryService;
 import fr.deepstonestudio.deepstone.util.WarService;

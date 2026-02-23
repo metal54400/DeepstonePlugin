@@ -1,6 +1,6 @@
 package fr.deepstonestudio.deepstone.Manager;
 
-import fr.deepstonestudio.deepstone.model.Clan;
+import fr.deepstonestudio.deepstone.model.clan.Clan;
 import fr.deepstonestudio.deepstone.util.ClanService;
 import fr.deepstonestudio.deepstone.util.Msg;
 import org.bukkit.Bukkit;

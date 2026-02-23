@@ -1,4 +1,4 @@
-package fr.deepstonestudio.deepstone.model;
+package fr.deepstonestudio.deepstone.model.clan;
 
 public enum Role {
     KING,   // Roi

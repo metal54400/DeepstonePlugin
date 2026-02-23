@@ -1,6 +1,6 @@
 package fr.deepstonestudio.deepstone.util;
 
-import fr.deepstonestudio.deepstone.model.War;
+import fr.deepstonestudio.deepstone.model.clan.War;
 
 import java.util.*;
 

@@ -1,6 +1,6 @@
 package fr.deepstonestudio.deepstone.api;
 
-import fr.deepstonestudio.deepstone.model.Clan;
+import fr.deepstonestudio.deepstone.model.clan.Clan;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 

@@ -1,6 +1,6 @@
 package fr.deepstonestudio.deepstone.util;
 
-import fr.deepstonestudio.deepstone.model.Clan;
+import fr.deepstonestudio.deepstone.model.clan.Clan;
 import fr.deepstonestudio.deepstone.storage.YamlStore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

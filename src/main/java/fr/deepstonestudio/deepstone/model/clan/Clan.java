@@ -1,4 +1,4 @@
-package fr.deepstonestudio.deepstone.model;
+package fr.deepstonestudio.deepstone.model.clan;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

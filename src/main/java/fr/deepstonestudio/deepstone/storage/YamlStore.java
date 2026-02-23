@@ -1,7 +1,7 @@
 package fr.deepstonestudio.deepstone.storage;
 
-import fr.deepstonestudio.deepstone.model.Clan;
-import fr.deepstonestudio.deepstone.model.Role;
+import fr.deepstonestudio.deepstone.model.clan.Clan;
+import fr.deepstonestudio.deepstone.model.clan.Role;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 

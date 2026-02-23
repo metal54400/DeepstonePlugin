@@ -1,6 +1,6 @@
 package fr.deepstonestudio.deepstone.Commands;
 
-import fr.deepstonestudio.deepstone.model.Role;
+import fr.deepstonestudio.deepstone.model.clan.Role;
 import fr.deepstonestudio.deepstone.util.ClanService;
 import fr.deepstonestudio.deepstone.util.Msg;
 import org.bukkit.Bukkit;

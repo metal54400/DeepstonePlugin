@@ -37,9 +37,9 @@ commands:
     usage: /clearlag
 
 
-
-
 permissions:
+  deepstone.admin:
+    default: op
   deepstone.priere.admin:
     default: op
 

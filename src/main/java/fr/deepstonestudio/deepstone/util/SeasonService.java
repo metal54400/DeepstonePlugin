@@ -1,7 +1,7 @@
 package fr.deepstonestudio.deepstone.util;
 
 import fr.deepstonestudio.deepstone.api.DiscordWebhook;
-import fr.deepstonestudio.deepstone.model.Clan;
+import fr.deepstonestudio.deepstone.model.clan.Clan;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.java.JavaPlugin;

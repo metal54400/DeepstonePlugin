@@ -191,3 +191,17 @@ updater:
     repo: "DeepstonePlugin"
     # optionnel : si tu veux forcer un nom d'asset spécifique (sinon: prend le 1er .jar)
     asset-name: ""
+
+inv-sync:
+  enabled: true
+
+  # Ce que tu veux synchroniser
+  sync-armor: true
+  sync-offhand: true
+  sync-enderchest: false
+  sync-xp: true
+  sync-health-food: false
+
+  # Anti-duplication
+  swap-lock-ticks: 8   # durée de blocage actions (drop/pickup/click) pendant le swap
+  autosave-seconds: 120
