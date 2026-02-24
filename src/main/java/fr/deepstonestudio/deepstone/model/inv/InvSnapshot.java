@@ -1,5 +1,7 @@
 package fr.deepstonestudio.deepstone.model.inv;
 
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -7,6 +9,8 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Base64;
 import java.util.Objects;
+
+import static com.google.common.util.concurrent.Striped.lock;
 
 public final class InvSnapshot {
 

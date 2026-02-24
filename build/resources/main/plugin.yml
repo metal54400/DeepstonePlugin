@@ -7,6 +7,7 @@ website: https://deep.deespstone.fr
 authors:
   - Deepstone-Studio
   - metal54400_
+
 depend:
   - ChestShop
   - GriefPrevention
@@ -17,10 +18,9 @@ softdepend:
   - Vault
 
 commands:
-  commands:
-    tips:
-      description: Active/Désactive les messages d'aide automatiques.
-      usage: /tips
+  tips:
+    description: Active/Désactive les messages d'aide automatiques.
+    usage: /tips | /tips reload
 
   mercenary:
     description: Mercenary commands
@@ -42,14 +42,15 @@ commands:
     usage: /clearlag
 
 permissions:
-  deepstone.tips.reload:
-    default: op
-
   deepstone.tips:
     default: true
 
+  deepstone.tips.reload:
+    default: op
+
   deepstone.admin:
     default: op
+
   deepstone.priere.admin:
     default: op
 
@@ -76,4 +77,3 @@ permissions:
   deepstone.rembourse:
     description: Permissions modérateur
     default: op
-

@@ -8,15 +8,18 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class TipsCommand implements CommandExecutor {
 
     private final TipsStore store;
     private final TipsService service;
+    private final JavaPlugin plugin;
 
-    public TipsCommand(TipsStore store, TipsService service) {
+    public TipsCommand(JavaPlugin plugin, TipsStore store, TipsService service) {
         this.store = store;
         this.service = service;
+        this.plugin = plugin;
     }
 
     @Override

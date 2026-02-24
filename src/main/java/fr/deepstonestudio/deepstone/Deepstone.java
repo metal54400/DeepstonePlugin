@@ -6,12 +6,13 @@ import fr.deepstonestudio.deepstone.Manager.*;
 import fr.deepstonestudio.deepstone.api.*;
 import fr.deepstonestudio.deepstone.api.AFK.AfkService;
 import fr.deepstonestudio.deepstone.api.AFK.Listener.PlayerActivityListener;
+import fr.deepstonestudio.deepstone.api.events.*;
 import fr.deepstonestudio.deepstone.api.updater.GitHubUpdater;
-import fr.deepstonestudio.deepstone.storage.TipsStore;
-import fr.deepstonestudio.deepstone.storage.YamlStore;
+import fr.deepstonestudio.deepstone.storage.*;
 import fr.deepstonestudio.deepstone.util.*;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -20,281 +21,261 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public final class Deepstone extends JavaPlugin {
 
+    public static Deepstone instance;
+
+    // Core
+    private Economy economy;
+    private boolean gpEnabled = false;
+
+    // Services
+    private ProtectionManager protectionManager;
+    private BlessingManager blessingManager;
     private ClearService clearService;
     private ClearLoop clearLoop;
-    private ProtectionManager protectionManager;
-    private InvSyncManager invSync;
-    private EssentialsHook essentialsHook; // champ (pas variable locale)
-    private AfkService afkService;
+
     private ClanService clans;
     private WarService warService;
     private GloryService gloryService;
-    private boolean gpEnabled = false;
-    public static Deepstone instance;
-    private Economy economy; // peut rester null
+
+    private EssentialsHook essentialsHook;
+    private AfkService afkService;
+
+    private InvSyncManager invSync;
+
+    // Ragnar Event
+    private RagnarDeathEvent ragnarEvent;
+    private RagnarDeathAutoStart ragnarAuto;
+
+    // Tips
+    private TipsStore tipsStore;
+    private TipsService tipsService;
+
+    // Misc
     private final Map<UUID, Long> sacrificeMap = new HashMap<>();
     private final Map<UUID, String> priereDeathCauseMap = new HashMap<>();
 
-    private BlessingManager blessingManager;
-
-
     @Override
-public void onEnable() {
-    instance = this;
-    saveDefaultConfig();
+    public void onEnable() {
+        instance = this;
+        saveDefaultConfig();
 
-    // ===== Detect deps FIRST =====
-    economy = setupEconomy();
-        TipsStore tipsStore = new TipsStore(this);
-        tipsStore.load();
+        detectDependencies();
+        setupCore();
+        setupCommandsAndListeners();
+        setupAfk();
+        setupUpdater();
+        setupRagnarDeath();
+        loadAsyncData();
+    }
 
-        TipsService tipsService = new TipsService(this, tipsStore);
-        tipsService.start();
+    // =====================================================
+    // DEPENDENCIES
+    // =====================================================
 
-        getCommand("tips").setExecutor(new TipsCommand(tipsStore, tipsService));
+    private void detectDependencies() {
+        economy = setupEconomy();
 
-    Plugin gp = Bukkit.getPluginManager().getPlugin("GriefPrevention");
-    gpEnabled = (gp != null && gp.isEnabled());
-    getLogger().info(gpEnabled ? "GriefPrevention détecté ✔" : "GriefPrevention non détecté.");
+        Plugin gp = Bukkit.getPluginManager().getPlugin("GriefPrevention");
+        gpEnabled = (gp != null && gp.isEnabled());
 
-    // Essentials hook
-    Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
-    if (essentials != null && essentials.isEnabled()) {
-        this.essentialsHook = EssentialsHook.tryCreate(essentials);
-        if (this.essentialsHook != null) {
-            getLogger().info("Hook Essentials: OK (Deepstone n'active pas son AFK interne).");
+        Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
+        if (essentials != null && essentials.isEnabled()) {
+            essentialsHook = EssentialsHook.tryCreate(essentials);
         }
     }
 
-    // ===== Core services (SYNC only) =====
-    this.protectionManager = new ProtectionManager(this);
-    protectionManager.startCleanupTask();
+    // =====================================================
+    // CORE
+    // =====================================================
 
-    this.blessingManager = new BlessingManager(this);
+    private void setupCore() {
+        protectionManager = new ProtectionManager(this);
+        protectionManager.startCleanupTask();
 
-    this.clearService = new ClearService(this);
-    this.clearLoop = new ClearLoop(this, clearService);
+        blessingManager = new BlessingManager(this);
 
-    // IMPORTANT: no local variables => use fields ONLY
-    this.warService = new WarService();
-    this.gloryService = new GloryService(this);
+        clearService = new ClearService(this);
+        clearLoop = new ClearLoop(this, clearService);
 
-    // Storage + clans
-    var store = new YamlStore(this);
-    this.clans = new ClanService(store, gpEnabled);
-    MercenaryService mercService = new MercenaryService(clans, store);
+        warService = new WarService();
+        gloryService = new GloryService(this);
 
-    // ===== Register commands/listeners that DON'T need loaded data =====
-    registerCommands(mercService);
-    registerListeners(mercService);
+        var store = new YamlStore(this);
+        clans = new ClanService(store, gpEnabled);
+    }
 
-    // AFK + updater can start now (they don't need clans loaded)
-    setupAfk();
+    // =====================================================
+    // COMMANDS + LISTENERS
+    // =====================================================
 
+    private void setupCommandsAndListeners() {
+        var store = new YamlStore(this);
+        MercenaryService mercService = new MercenaryService(clans, store);
+
+        registerCommand("clearlag", c -> c.setExecutor(new ClearLagCommand(clearService)));
+
+        registerCommand("clan", c -> {
+            ClanCommand cmd = new ClanCommand(clans);
+            c.setExecutor(cmd);
+            c.setTabCompleter(cmd);
+        });
+
+        registerCommand("war", c -> c.setExecutor(new WarCommand(clans, warService)));
+
+        SagaStore sagaStore = new SagaStore(this);
+        registerCommand("saga", c -> c.setExecutor(new SagaCommand(sagaStore)));
+
+        registerCommand("priere", c ->
+                c.setExecutor(new PriereCommand(economy, sacrificeMap, priereDeathCauseMap, blessingManager))
+        );
+
+        registerCommand("mercenary", c -> {
+            MercenaryCommand cmd = new MercenaryCommand(mercService);
+            c.setExecutor(cmd);
+            c.setTabCompleter(cmd);
+        });
+
+        // Listeners principaux
+        Bukkit.getPluginManager().registerEvents(new BlessingListener(blessingManager), this);
+        Bukkit.getPluginManager().registerEvents(new SacrificeListener(sacrificeMap), this);
+        Bukkit.getPluginManager().registerEvents(new PriereDeathListener(priereDeathCauseMap), this);
+
+        invSync = new InvSyncManager(this);
+        if (invSync.isEnabled()) {
+            Bukkit.getPluginManager().registerEvents(new InvSyncListener(invSync), this);
+        }
+    }
+
+    private void registerCommand(String name, Consumer<PluginCommand> consumer) {
+        PluginCommand cmd = getCommand(name);
+        if (cmd == null) {
+            getLogger().severe("Commande /" + name + " manquante dans plugin.yml");
+            return;
+        }
+        consumer.accept(cmd);
+    }
+
+    // =====================================================
+    // AFK (FIXED CONFIG PATH)
+    // =====================================================
+
+    private void setupAfk() {
+        long autoAfk = getConfig().getLong("afk.auto-afk", 300L);
+        long autoAfkKick = getConfig().getLong("afk.auto-afk-kick", 1200L);
+
+        boolean cancelMove = getConfig().getBoolean("afk.cancel-on-move", true);
+        boolean cancelChat = getConfig().getBoolean("afk.cancel-on-chat", true);
+        boolean cancelInteract = getConfig().getBoolean("afk.cancel-on-interact", true);
+
+        boolean broadcast = getConfig().getBoolean("afk.messages.broadcast", true);
+
+        String suffix = getConfig().getString("afk.suffix", "&7[AFK]");
+        String nowMsg = getConfig().getString("afk.messages.now-afk", "&e{PLAYER} &7est AFK");
+        String noLonger = getConfig().getString("afk.messages.no-longer-afk", "&e{PLAYER} &7n'est plus AFK");
+        String kickMsg = getConfig().getString("afk.kick-message", "&cKick AFK");
+
+        boolean internal = essentialsHook == null;
+
+        afkService = new AfkService(
+                this,
+                internal ? autoAfk : -1,
+                internal ? autoAfkKick : -1,
+                kickMsg,
+                true,
+                broadcast,
+                nowMsg,
+                noLonger
+        );
+
+        if (internal) {
+            Bukkit.getPluginManager().registerEvents(
+                    new PlayerActivityListener(afkService, cancelMove, cancelChat, cancelInteract),
+                    this
+            );
+            afkService.start();
+        }
+    }
+
+    // =====================================================
+    // RAGNAR EVENT
+    // =====================================================
+
+    private void setupRagnarDeath() {
+        ragnarEvent = new RagnarDeathEvent(this);
+
+        Bukkit.getPluginManager().registerEvents(
+                new RagnarDeathListener(ragnarEvent),
+                this
+        );
+
+        registerCommand("ragnardeath",
+                cmd -> cmd.setExecutor(new RagnarDeathCommand(ragnarEvent))
+        );
+
+        ragnarAuto = new RagnarDeathAutoStart(this, ragnarEvent);
+        ragnarAuto.start();
+    }
+
+    // =====================================================
+    // UPDATER
+    // =====================================================
+
+    private void setupUpdater() {
         GitHubUpdater updater = new GitHubUpdater(this);
 
-        // ✅ Check au démarrage
         if (getConfig().getBoolean("updater.check-on-start", true)) {
             Bukkit.getScheduler().runTaskAsynchronously(this, () -> updater.checkAndDownloadIfNeeded(null));
         }
+    }
 
-        // ✅ Check toutes les X minutes
-        int minutes = getConfig().getInt("updater.check-interval-minutes", 60);
-        if (minutes > 0) {
-            long periodTicks = minutes * 60L * 20L;
-            Bukkit.getScheduler().runTaskTimerAsynchronously(this,
-                    () -> updater.checkAndDownloadIfNeeded(null),
-                    periodTicks, periodTicks
-            );
-        }
+    // =====================================================
+    // ASYNC DATA
+    // =====================================================
 
-    // ===== Load data ASYNC =====
-    Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-        try {
-            mercService.loadAll();
-            this.clans.loadAll();
-        } catch (Exception e) {
-            getLogger().severe("Load error: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        // Back to main thread for Bukkit stuff
-        Bukkit.getScheduler().runTask(this, () -> {
-            DeepstoneAPI.init(this);
-
-            DiscordWebhook discord = new DiscordWebhook(this);
-            SeasonService season = new SeasonService(this, this.clans, this.gloryService, discord);
-            season.startScheduler();
-
-            var capital = new CapitalManager(this, clans);
-            getServer().getPluginManager().registerEvents(capital, this);
-            capital.start();
-
-            // Blessings cleanup
-            getServer().getScheduler().runTaskTimer(this,
-                    () -> blessingManager.cleanupExpired(true),
-                    20L * 60L, 20L * 60L * 5L);
-
-            getLogger().info("Deepstone activé (data chargées) !");
+    private void loadAsyncData() {
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            try {
+                clans.loadAll();
+            } catch (Exception e) {
+                getLogger().severe("Load error: " + e.getMessage());
+            }
         });
-    });
-}
-
-
-
-private void registerCommands(MercenaryService mercService) {
-    if (getCommand("clearlag") != null) {
-        getCommand("clearlag").setExecutor(new ClearLagCommand(clearService));
     }
 
-    if (getCommand("clan") != null) {
-        ClanCommand cmd = new ClanCommand(this.clans);
-        getCommand("clan").setExecutor(cmd);
-        getCommand("clan").setTabCompleter(cmd);
-    } else {
-        getLogger().severe("Commande /clan manquante dans plugin.yml");
-    }
-
-    if (getCommand("war") != null) {
-        getCommand("war").setExecutor(new WarCommand(this.clans, this.warService));
-    }
-
-    if (getCommand("priere") != null) {
-        getCommand("priere").setExecutor(
-                new PriereCommand(economy, sacrificeMap, priereDeathCauseMap, blessingManager)
-        );
-    }
-
-    if (getCommand("mercenary") != null) {
-        MercenaryCommand mercCmd = new MercenaryCommand(mercService);
-        getCommand("mercenary").setExecutor(mercCmd);
-        getCommand("mercenary").setTabCompleter(mercCmd);
-    }
-}
-
-private void registerListeners(MercenaryService mercService) {
-    RuneProtectionManager runeProtection = new RuneProtectionManager();
-
-    getServer().getPluginManager().registerEvents(new RuneProtectionListener(runeProtection), this);
-    getServer().getPluginManager().registerEvents(new CommandBlockListener(), this);
-    getServer().getPluginManager().registerEvents(new MobHeadDropListener(this), this);
-    getServer().getPluginManager().registerEvents(new VillagerTradeLimiter(this), this);
-    getServer().getPluginManager().registerEvents(new RaidListener(this), this);
-    getServer().getPluginManager().registerEvents(new TradeHours(this), this);
-    getServer().getPluginManager().registerEvents(new CreativeItemLoreListener(this), this);
-    getServer().getPluginManager().registerEvents(new TeleportListener(protectionManager, 2.5), this);
-    getServer().getPluginManager().registerEvents(new PvpListener(protectionManager), this);
-    getServer().getPluginManager().registerEvents(new DeathListener(this, runeProtection), this);
-    getServer().getPluginManager().registerEvents(new ClanFriendlyFireListener(clans, mercService), this);
-    getServer().getPluginManager().registerEvents(new ClanChatListener(this, clans), this);
-    getServer().getPluginManager().registerEvents(new SacrificeListener(sacrificeMap), this);
-    getServer().getPluginManager().registerEvents(new ShopPriceListener(), this);
-    getServer().getPluginManager().registerEvents(new DecapitationListener(this), this);
-
-    // Use FIELDS war/glory (no locals)
-    getServer().getPluginManager().registerEvents(
-            new WarListener(this.clans, this.warService, this.gloryService),
-            this
-    );
-
-    getServer().getPluginManager().registerEvents(new PriereDeathListener(priereDeathCauseMap), this);
-    getServer().getPluginManager().registerEvents(new BlessingListener(blessingManager), this);
-    getServer().getPluginManager().registerEvents(new ClaimActionbarListener(this), this);
-    getServer().getPluginManager().registerEvents(new ZombieVillagerBoostListener(this), this);
-    invSync = new InvSyncManager(this);
-    if (invSync.isEnabled()) {
-        getServer().getPluginManager().registerEvents(new InvSyncListener(invSync), this);
-
-        // autosave
-        int sec = Math.max(30, getConfig().getInt("inv-sync.autosave-seconds", 120));
-        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> invSync.flush(), 20L * sec, 20L * sec);
-    }
-}
-
-private void setupAfk() {
-    long autoAfk = getConfig().getLong("auto-afk", 300L);
-    long autoAfkKick = getConfig().getLong("auto-afk-kick", 1200L);
-
-    boolean cancelOnMove = getConfig().getBoolean("cancel-afk-on-move", true);
-    boolean cancelOnChat = getConfig().getBoolean("cancel-afk-on-chat", true);
-    boolean cancelOnInteract = getConfig().getBoolean("cancel-afk-on-interact", true);
-
-    boolean broadcast = getConfig().getBoolean("broadcast-afk-message", true);
-
-    String afkSuffix = getConfig().getString("afk-suffix", "&7[AFK]");
-    String msgNowAfk = getConfig().getString("message-now-afk", "&e{PLAYER} &7est maintenant " + afkSuffix);
-    String msgNoLonger = getConfig().getString("message-no-longer-afk", "&e{PLAYER} &7n'est plus AFK");
-    String kickMessage = getConfig().getString("kick-message", "&cKick: AFK trop longtemps.");
-
-    boolean useInternalAfk = (this.essentialsHook == null);
-
-    this.afkService = new AfkService(
-            this,
-            useInternalAfk ? autoAfk : -1,
-            useInternalAfk ? autoAfkKick : -1,
-            kickMessage,
-            true,
-            broadcast,
-            msgNowAfk,
-            msgNoLonger
-    );
-
-    if (useInternalAfk) {
-        Bukkit.getPluginManager().registerEvents(
-                new PlayerActivityListener(this.afkService, cancelOnMove, cancelOnChat, cancelOnInteract),
-                this
-        );
-        this.afkService.start();
-    }
-
-    Plugin papi = Bukkit.getPluginManager().getPlugin("PlaceholderAPI");
-    if (papi != null && papi.isEnabled()) {
-        new fr.deepstonestudio.deepstone.api.DeepstoneExpansion(
-                this,
-                this.afkService,
-                this.clans,
-                this.essentialsHook
-        ).register();
-        getLogger().info("Expansion PlaceholderAPI Deepstone enregistrée (afk + clan).");
-    }
-}
+    // =====================================================
+    // ECONOMY
+    // =====================================================
 
     private Economy setupEconomy() {
         if (getServer().getPluginManager().getPlugin("Vault") == null) return null;
-
         RegisteredServiceProvider<Economy> rsp =
                 getServer().getServicesManager().getRegistration(Economy.class);
-
-        if (rsp == null) return null;
-        return rsp.getProvider();
+        return rsp == null ? null : rsp.getProvider();
     }
+
+    // =====================================================
+    // SHUTDOWN
+    // =====================================================
 
     @Override
     public void onDisable() {
-       // if (clearLoop != null) clearLoop.stop();
+        if (tipsService != null) tipsService.stop();
         if (afkService != null) afkService.stop();
-        try {
-            if (clans != null) clans.saveAll();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        if (ragnarAuto != null) ragnarAuto.stop();
+        if (ragnarEvent != null && ragnarEvent.isRunning()) ragnarEvent.stop();
         if (invSync != null) invSync.flush();
+        if (clans != null) {
+            try {
+                clans.saveAll();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
-    public boolean isGpEnabled() {
-        return gpEnabled;
-    }
-
-
-
-    public ClanService getClans() { return clans; }
-    public WarService getWarService() { return warService; }
-    public GloryService getGloryService() { return gloryService; }
-    public BlessingManager getBlessingManager() { return blessingManager; }
-    public ProtectionManager getProtectionManager() { return protectionManager; }
 
     public static Deepstone getInstance() {
         return instance;
