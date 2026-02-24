@@ -7,7 +7,6 @@ website: https://deep.deespstone.fr
 authors:
   - Deepstone-Studio
   - metal54400_
-
 depend:
   - ChestShop
   - GriefPrevention
@@ -53,6 +52,7 @@ commands:
 
 permissions:
   deepstone.event.ragnardeath:
+    description: Lancer / arrêter l'event RagnarDeath
     default: op
 
   deepstone.saga:
@@ -93,3 +93,4 @@ permissions:
   deepstone.rembourse:
     description: Permissions modérateur
     default: op
+
