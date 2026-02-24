@@ -37,6 +37,7 @@ public final class RagnarDeathAutoStart {
         List<String> worlds = plugin.getConfig().getStringList("ragnardeath.worlds");
 
         // 24000 ticks = 1 jour minecraft
+        int finalChance = chance;
         taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
 
             // si event déjà en cours -> rien
@@ -49,7 +50,7 @@ public final class RagnarDeathAutoStart {
             }
 
             // tirage
-            if (!roll(chance)) return;
+            if (!roll(finalChance)) return;
 
             // monde cible
             World w = null;
