@@ -2,10 +2,10 @@ package fr.deepstonestudio.deepstone.api;
 
 import fr.deepstonestudio.deepstone.Deepstone;
 import fr.deepstonestudio.deepstone.util.ClanService;
+import fr.deepstonestudio.deepstone.util.GloryService;
 import fr.deepstonestudio.deepstone.util.WarService;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-
-import java.util.Objects;
 
 public final class DeepstoneAPI {
 
@@ -32,16 +32,27 @@ public final class DeepstoneAPI {
     /** Services exposés */
     public static ClanService getClans() {
         ensureReady();
-        return plugin.getClans(); // on ajoute un getter dans Deepstone
+        return plugin.getClans();
     }
 
     public static WarService getWars() {
         ensureReady();
-        return plugin.getWarService(); // getter à ajouter
+        return plugin.getWarService();
     }
 
-    /** Petit helper : vérifier que Deepstone est présent */
-    public static boolean isPresent(Plugin p) {
-        return Objects.equals(p.getServer().getPluginManager().getPlugin("Deepstone"), plugin);
+    public static GloryService getGlory() {
+        ensureReady();
+        return plugin.getGloryService();
+    }
+
+    /** Vérifie si Deepstone est installé + initialisé */
+    public static boolean isReady() {
+        return plugin != null && plugin.isEnabled();
+    }
+
+    /** Vérifie si le plugin Deepstone est présent sur le serveur */
+    public static boolean isPresent() {
+        Plugin p = Bukkit.getPluginManager().getPlugin("Deepstone");
+        return p != null && p.isEnabled();
     }
 }

@@ -277,7 +277,15 @@ public final class Deepstone extends JavaPlugin {
         }
     }
 
+    // =====================================================
+    // GETTERS
+    // =====================================================
+
     public static Deepstone getInstance() {
         return instance;
     }
+
+    public ClanService getClans() { return clans; }
+    public WarService getWarService() { return warService; }
+    public GloryService getGloryService() { return gloryService; }
 }
