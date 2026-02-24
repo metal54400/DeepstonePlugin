@@ -1,6 +1,7 @@
 package fr.deepstonestudio.deepstone.Listener;
 
 import fr.deepstonestudio.deepstone.Manager.InvSyncManager;
+import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -9,32 +10,45 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
 
 public final class InvSyncListener implements Listener {
+
     private final InvSyncManager manager;
 
     public InvSyncListener(InvSyncManager manager) {
         this.manager = manager;
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    // ===================== GAMEMODE SWAP =====================
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onGamemodeChange(PlayerGameModeChangeEvent e) {
-        // On déclenche notre swap (save old, load new)
-        manager.swap(e.getPlayer(), e.getNewGameMode());
+
+        // On attend 1 tick pour être sûr que le gamemode a changé
+        Bukkit.getScheduler().runTask(manager.getPlugin(), () ->
+                manager.swap(e.getPlayer(), e.getNewGameMode())
+        );
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    // ===================== JOIN =====================
+
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent e) {
-        // Au join: charge le groupe correspondant au gamemode actuel
-        manager.lock(e.getPlayer());
-        manager.loadFor(e.getPlayer(), e.getPlayer().getGameMode());
+
+        // On attend 1 tick que tout soit chargé
+        Bukkit.getScheduler().runTask(manager.getPlugin(), () -> {
+            manager.lock(e.getPlayer());
+            manager.loadFor(e.getPlayer(), e.getPlayer().getGameMode());
+        });
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    // ===================== QUIT =====================
+
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent e) {
         manager.saveCurrent(e.getPlayer());
         manager.flush();
     }
 
-    // Anti-dupe: bloque actions pendant lock
+    // ===================== ANTI DUPE =====================
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDrop(PlayerDropItemEvent e) {
@@ -60,3 +74,4 @@ public final class InvSyncListener implements Listener {
         if (manager.isLocked(e.getPlayer())) e.setCancelled(true);
     }
 }
+

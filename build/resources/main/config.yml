@@ -82,7 +82,7 @@ season:
 rewards:
   top1:
     - "eco give %king% 500"
-    - "give %king% netherite_ingot 2"
+    - "crates key give floki_key 2"
   top2:
     - "give %king% diamond 16"
   top3:
@@ -94,10 +94,10 @@ discord:
   mention-role-id: "1397967686410961026"   # optionnel, ex: "1234567890"
 
 villager-trade-limiter:
-  enabled: true
+  enabled: false
 
   enchanted-book:
-    enabled: true
+    enabled: false
     cooldown-seconds: 3600
     message: "§7[§e?§7] Vous devez attendre avant d'acheter un autre livre enchanté !"
 
@@ -107,7 +107,7 @@ villager-trade-limiter:
     cheap-items-max-uses: 5
 
 trade-hours:
-  enabled: true
+  enabled: false
 
   # Heures Minecraft (0-23). Exemple: 7 = 07h, 19 = 19h
   start-hour: 7
@@ -116,7 +116,7 @@ trade-hours:
   # Si true => Msg.broadcast(), sinon message uniquement au joueur
   broadcast: true
 
-  message: "&7[§e?&7] Les échanges avec les villageois sont autorisés uniquement de &d%start%h& à &b%end%h&."
+  message: "&7[§e?&7] Les échanges avec les villageois sont autorisés uniquement de &d%start%h&7 à &b%end%h&7."
 
 runes:
   enabled: true
@@ -187,24 +187,33 @@ updater:
   check-interval-minutes: 60
   notify-permission: "deepstone.admin"
   github:
-    owner: "metal54400"
+    owner: "DeepstoneStudio"
     repo: "DeepstonePlugin"
     # optionnel : si tu veux forcer un nom d'asset spécifique (sinon: prend le 1er .jar)
     asset-name: ""
 
 inv-sync:
   enabled: true
+  debug: false
 
-  # Ce que tu veux synchroniser
+  swap-lock-ticks: 8
+
   sync-armor: true
   sync-offhand: true
   sync-enderchest: false
   sync-xp: true
   sync-health-food: false
 
-  # Anti-duplication
-  swap-lock-ticks: 8   # durée de blocage actions (drop/pickup/click) pendant le swap
-  autosave-seconds: 120
+  auto-save:
+    enabled: true
+    interval-minutes: 5
+
+  backup:
+    enabled: true
+    max-per-player: 5
+
+zombieInfect:
+  enabled: true
 
 tips:
   enabled: true
@@ -213,9 +222,27 @@ tips:
   random: true
   messages:
     - "&7Utilise &e/menu &7pour accéder aux fonctionnalités principales."
+    - "Vous pouvez faire /quest pour gagner des Points de vote de l'argent des block de claim en effectuent des quête"
+    - "Faites /voteshop ou /votes pour acheter avec vos point de votes des clé"
     - "&7L'End est ouvert ! &d/warp end"
-    - "&7Helheim contient des quêtes dangereuses &c/warp helheim"
     - "&7Vends tes items aux joueurs avec &6/ah"
-    - "&7Besoin d'argent ? Utilise &a/shop"
+    - "&7Besoin d'argent ? Utilise &a/sellgui &7pour te faire de l'argents"
     - "&7Rejoins un clan et gagne de la gloire !"
     - "&7N'oublie pas de voter : &bhttps://deep.deepstone.fr/vote"
+    - "Si vous voulez l'histoire vrai de Ragnar et les Ragnarson faites /saga start"
+    - "Si vous voulez achetez un grades avec de la vrai argent aller sur &bhttps://deep.deepstone.fr/shop/categories/1"
+    - "Pour achetez un grades INGAME allez dans /shop puis allez dans categories Grades et pouvez acheter des grades avec de l'argent ingame"
+    - "Pour changer de &aSkin&7 faites /skin set url ou nom d'un joueur premium"
+    - "Petite information &7[&c!&7] Le Tpkill est &cinterdit&7 sur le server "
+
+ragnardeath:
+  random-enabled: true
+  # chance par "jour minecraft" (24000 ticks)
+  random-chance-percent: 15
+
+  # sur quels mondes l'event peut pop (vide = monde où le scheduler tourne)
+  worlds:
+    - world
+
+  # sécurité : ne pas relancer si déjà en cours
+  cooldown-days: 0  # 0 = pas de cooldown, sinon nombre de jours MC à attendre après un event

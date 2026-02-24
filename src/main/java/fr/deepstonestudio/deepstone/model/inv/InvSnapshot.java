@@ -1,7 +1,5 @@
 package fr.deepstonestudio.deepstone.model.inv;
 
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -9,16 +7,14 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Base64;
 import java.util.Objects;
-
-import static com.google.common.util.concurrent.Striped.lock;
+import java.util.logging.Level;
 
 public final class InvSnapshot {
 
-    // ✅ Champs (noms explicites, pas de conflit avec les booleans)
-    public ItemStack[] storageContents;   // 36
-    public ItemStack[] armorContents;     // 4
-    public ItemStack offhandItem;         // 1
-    public ItemStack[] enderContents;     // 27
+    public ItemStack[] storageContents;
+    public ItemStack[] armorContents;
+    public ItemStack offhandItem;
+    public ItemStack[] enderContents;
 
     public int totalExp;
     public int level;
@@ -28,7 +24,7 @@ public final class InvSnapshot {
     public int food;
     public float saturation;
 
-    // -------- capture/apply --------
+    // ========================= CAPTURE =========================
 
     public static InvSnapshot capture(Player p,
                                       boolean syncArmor,
@@ -39,11 +35,16 @@ public final class InvSnapshot {
 
         InvSnapshot s = new InvSnapshot();
 
-        s.storageContents = p.getInventory().getStorageContents(); // 0-35
+        s.storageContents = cloneArray(p.getInventory().getStorageContents());
 
-        if (syncArmor) s.armorContents = p.getInventory().getArmorContents();
-        if (syncOffhand) s.offhandItem = p.getInventory().getItemInOffHand();
-        if (syncEnder) s.enderContents = p.getEnderChest().getContents();
+        if (syncArmor)
+            s.armorContents = cloneArray(p.getInventory().getArmorContents());
+
+        if (syncOffhand)
+            s.offhandItem = p.getInventory().getItemInOffHand();
+
+        if (syncEnder)
+            s.enderContents = cloneArray(p.getEnderChest().getContents());
 
         if (syncXp) {
             s.totalExp = p.getTotalExperience();
@@ -61,6 +62,8 @@ public final class InvSnapshot {
         return s;
     }
 
+    // ========================= APPLY SAFE =========================
+
     public void apply(Player p,
                       boolean syncArmor,
                       boolean syncOffhand,
@@ -68,17 +71,19 @@ public final class InvSnapshot {
                       boolean syncXp,
                       boolean syncHealthFood) {
 
-        p.getInventory().setStorageContents(nullToEmpty(storageContents, 36));
+        if (storageContents != null) {
+            p.getInventory().setStorageContents(nullToEmpty(storageContents, 36));
+        }
 
-        if (syncArmor) {
+        if (syncArmor && armorContents != null) {
             p.getInventory().setArmorContents(nullToEmpty(armorContents, 4));
         }
 
-        if (syncOffhand) {
-            p.getInventory().setItemInOffHand(offhandItem); // ✅ ItemStack, plus boolean
+        if (syncOffhand && offhandItem != null) {
+            p.getInventory().setItemInOffHand(offhandItem);
         }
 
-        if (syncEnder) {
+        if (syncEnder && enderContents != null) {
             p.getEnderChest().setContents(nullToEmpty(enderContents, 27));
         }
 
@@ -86,6 +91,7 @@ public final class InvSnapshot {
             p.setTotalExperience(0);
             p.setExp(0);
             p.setLevel(0);
+
             p.setLevel(level);
             p.setExp(exp);
             p.setTotalExperience(totalExp);
@@ -101,8 +107,13 @@ public final class InvSnapshot {
         p.updateInventory();
     }
 
+    private static ItemStack[] cloneArray(ItemStack[] original) {
+        return original == null ? null : original.clone();
+    }
+
     private static ItemStack[] nullToEmpty(ItemStack[] arr, int size) {
-        if (arr == null) return new ItemStack[size];
+        if (arr == null) return null;
+
         if (arr.length == size) return arr;
 
         ItemStack[] fixed = new ItemStack[size];
@@ -110,7 +121,7 @@ public final class InvSnapshot {
         return fixed;
     }
 
-    // -------- YAML serialize (Base64 via Java Object streams) --------
+    // ========================= SAVE =========================
 
     public void save(ConfigurationSection sec,
                      boolean syncArmor,
@@ -119,11 +130,17 @@ public final class InvSnapshot {
                      boolean syncXp,
                      boolean syncHealthFood) {
 
-        sec.set("storage", ItemStackBase64.toBase64(storageContents));
+        if (storageContents != null)
+            sec.set("storage", ItemStackBase64.toBase64(storageContents));
 
-        if (syncArmor) sec.set("armor", ItemStackBase64.toBase64(armorContents));
-        if (syncOffhand) sec.set("offhand", ItemStackBase64.toBase64(offhandItem));
-        if (syncEnder) sec.set("ender", ItemStackBase64.toBase64(enderContents));
+        if (syncArmor && armorContents != null)
+            sec.set("armor", ItemStackBase64.toBase64(armorContents));
+
+        if (syncOffhand && offhandItem != null)
+            sec.set("offhand", ItemStackBase64.toBase64(offhandItem));
+
+        if (syncEnder && enderContents != null)
+            sec.set("ender", ItemStackBase64.toBase64(enderContents));
 
         if (syncXp) {
             sec.set("xp.total", totalExp);
@@ -138,6 +155,8 @@ public final class InvSnapshot {
         }
     }
 
+    // ========================= LOAD SAFE =========================
+
     public static InvSnapshot load(ConfigurationSection sec,
                                    boolean syncArmor,
                                    boolean syncOffhand,
@@ -147,28 +166,50 @@ public final class InvSnapshot {
 
         InvSnapshot s = new InvSnapshot();
 
-        s.storageContents = ItemStackBase64.fromBase64Array(sec.getString("storage"));
+        try {
+            String storage = sec.getString("storage");
+            if (storage != null)
+                s.storageContents = ItemStackBase64.fromBase64Array(storage);
 
-        if (syncArmor) s.armorContents = ItemStackBase64.fromBase64Array(sec.getString("armor"));
-        if (syncOffhand) s.offhandItem = ItemStackBase64.fromBase64Item(sec.getString("offhand"));
-        if (syncEnder) s.enderContents = ItemStackBase64.fromBase64Array(sec.getString("ender"));
+            if (syncArmor) {
+                String armor = sec.getString("armor");
+                if (armor != null)
+                    s.armorContents = ItemStackBase64.fromBase64Array(armor);
+            }
 
-        if (syncXp) {
-            s.totalExp = sec.getInt("xp.total", 0);
-            s.level = sec.getInt("xp.level", 0);
-            s.exp = (float) sec.getDouble("xp.exp", 0.0);
-        }
+            if (syncOffhand) {
+                String offhand = sec.getString("offhand");
+                if (offhand != null)
+                    s.offhandItem = ItemStackBase64.fromBase64Item(offhand);
+            }
 
-        if (syncHealthFood) {
-            s.health = sec.getDouble("hf.health", 20.0);
-            s.food = sec.getInt("hf.food", 20);
-            s.saturation = (float) sec.getDouble("hf.saturation", 5.0);
+            if (syncEnder) {
+                String ender = sec.getString("ender");
+                if (ender != null)
+                    s.enderContents = ItemStackBase64.fromBase64Array(ender);
+            }
+
+            if (syncXp) {
+                s.totalExp = sec.getInt("xp.total", 0);
+                s.level = sec.getInt("xp.level", 0);
+                s.exp = (float) sec.getDouble("xp.exp", 0.0);
+            }
+
+            if (syncHealthFood) {
+                s.health = sec.getDouble("hf.health", 20.0);
+                s.food = sec.getInt("hf.food", 20);
+                s.saturation = (float) sec.getDouble("hf.saturation", 5.0);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return s;
     }
 
-    // ---------- helper serializer ----------
+    // ========================= BASE64 SERIALIZER =========================
+
     static final class ItemStackBase64 {
 
         public static String toBase64(ItemStack item) {
@@ -178,15 +219,17 @@ public final class InvSnapshot {
 
         public static String toBase64(ItemStack[] items) {
             if (items == null) return null;
+
             try (java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
                  java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(baos)) {
 
                 oos.writeInt(items.length);
                 for (ItemStack it : items) oos.writeObject(it);
-                oos.flush();
+
                 return Base64.getEncoder().encodeToString(baos.toByteArray());
 
             } catch (Exception e) {
+                e.printStackTrace();
                 return null;
             }
         }
@@ -198,17 +241,24 @@ public final class InvSnapshot {
 
         public static ItemStack[] fromBase64Array(String b64) {
             if (b64 == null || b64.isEmpty()) return null;
-            byte[] data = Base64.getDecoder().decode(b64);
 
-            try (java.io.ObjectInputStream ois =
-                         new java.io.ObjectInputStream(new java.io.ByteArrayInputStream(data))) {
+            try {
+                byte[] data = Base64.getDecoder().decode(b64);
 
-                int len = ois.readInt();
-                ItemStack[] items = new ItemStack[len];
-                for (int i = 0; i < len; i++) items[i] = (ItemStack) ois.readObject();
-                return items;
+                try (java.io.ObjectInputStream ois =
+                             new java.io.ObjectInputStream(new java.io.ByteArrayInputStream(data))) {
+
+                    int len = ois.readInt();
+                    ItemStack[] items = new ItemStack[len];
+
+                    for (int i = 0; i < len; i++)
+                        items[i] = (ItemStack) ois.readObject();
+
+                    return items;
+                }
 
             } catch (Exception e) {
+                e.printStackTrace();
                 return null;
             }
         }

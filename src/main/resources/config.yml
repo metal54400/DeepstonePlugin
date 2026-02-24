@@ -194,17 +194,26 @@ updater:
 
 inv-sync:
   enabled: true
+  debug: false
 
-  # Ce que tu veux synchroniser
+  swap-lock-ticks: 8
+
   sync-armor: true
   sync-offhand: true
   sync-enderchest: false
   sync-xp: true
   sync-health-food: false
 
-  # Anti-duplication
-  swap-lock-ticks: 8   # durée de blocage actions (drop/pickup/click) pendant le swap
-  autosave-seconds: 120
+  auto-save:
+    enabled: true
+    interval-minutes: 5
+
+  backup:
+    enabled: true
+    max-per-player: 5
+
+zombieInfect:
+  enabled: true
 
 tips:
   enabled: true

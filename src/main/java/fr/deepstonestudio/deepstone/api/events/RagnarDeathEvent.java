@@ -206,9 +206,9 @@ public final class RagnarDeathEvent {
         pdc.set(KEY_BUFFED, PersistentDataType.BYTE, (byte) 1);
 
         // Multipliers random (tu peux ajuster les plages)
-        double hpMult  = randDouble(1.15, 1.65); // +15% à +65%
-        double dmgMult = randDouble(1.10, 1.45); // +10% à +45%
-        double spdMult = randDouble(1.03, 1.18); // +3% à +18%
+        double hpMult  = randDouble(1.08, 1.30); // +8% à +30%
+        double dmgMult = randDouble(1.05, 1.20); // +5% à +20%
+        double spdMult = randDouble(1.01, 1.08); // +1% à +8%
 
         // Stocke pour debug / futur
         pdc.set(KEY_HP_MULT,  PersistentDataType.DOUBLE, hpMult);
@@ -230,12 +230,12 @@ public final class RagnarDeathEvent {
 
     private void refreshPotions(LivingEntity mob) {
         // 10s, refresh régulièrement
-        mob.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 10, chance(35) ? 1 : 0, true, true, true));
-        mob.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 20 * 10, chance(25) ? 1 : 0, true, true, true));
+        mob.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 2, chance(35) ? 1 : 0, true, true, true));
+        mob.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 20 * 2, chance(25) ? 1 : 0, true, true, true));
 
         // Un peu de résistance parfois
         if (chance(20)) {
-            mob.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 20 * 10, 0, true, true, true));
+            mob.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 20 * 2, 0, true, true, true));
         }
 
         // Rare: invis (mobs “sournois”)

@@ -1,5 +1,6 @@
 package fr.deepstonestudio.deepstone.Manager;
 
+import fr.deepstonestudio.deepstone.Deepstone;
 import fr.deepstonestudio.deepstone.model.inv.InvSnapshot;
 import fr.deepstonestudio.deepstone.model.inv.InventoryGroup;
 import fr.deepstonestudio.deepstone.storage.YamlInvStore;
@@ -14,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class InvSyncManager {
 
-    private final JavaPlugin plugin;
+    private JavaPlugin plugin = Deepstone.getInstance();
     private final YamlInvStore store;
 
     private final boolean enabled;
@@ -26,10 +27,13 @@ public final class InvSyncManager {
 
     private final int lockTicks;
 
-    // Anti-duplication: lock during swap
     private final Map<UUID, Long> swapLockUntilTick = new ConcurrentHashMap<>();
 
+
+
     public InvSyncManager(JavaPlugin plugin) {
+
+
         this.plugin = plugin;
         this.store = new YamlInvStore(plugin);
 
@@ -41,6 +45,15 @@ public final class InvSyncManager {
         this.syncHealthFood = plugin.getConfig().getBoolean("inv-sync.sync-health-food", false);
 
         this.lockTicks = Math.max(2, plugin.getConfig().getInt("inv-sync.swap-lock-ticks", 8));
+        if (plugin.getConfig().getBoolean("inv-sync.auto-save.enabled", true)) {
+            int minutes = plugin.getConfig().getInt("inv-sync.auto-save.interval-minutes", 5);
+
+            Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+                flush();
+                plugin.getLogger().info("[InvSync] Auto-save exécuté.");
+            }, 20L * 60 * minutes, 20L * 60 * minutes);
+        }
+
     }
 
     public boolean isEnabled() {
@@ -64,9 +77,12 @@ public final class InvSyncManager {
 
     public void saveCurrent(Player p) {
         if (!enabled) return;
+        debug("Save inventaire " + p.getName());
         InventoryGroup g = InventoryGroup.from(p.getGameMode());
         InvSnapshot snap = InvSnapshot.capture(p, syncArmor, syncOffhand, syncEnder, syncXp, syncHealthFood);
-        store.save(p.getUniqueId(), g, snap, syncArmor, syncOffhand, syncEnder, syncXp, syncHealthFood);
+
+        store.save(p.getUniqueId(), g, snap,
+                syncArmor, syncOffhand, syncEnder, syncXp, syncHealthFood);
     }
 
     public void loadFor(Player p, GameMode targetMode) {
@@ -75,37 +91,61 @@ public final class InvSyncManager {
         InventoryGroup targetGroup = InventoryGroup.from(targetMode);
         UUID uuid = p.getUniqueId();
 
-        InvSnapshot loaded = store.load(uuid, targetGroup, syncArmor, syncOffhand, syncEnder, syncXp, syncHealthFood);
+        InvSnapshot loaded = store.load(uuid, targetGroup,
+                syncArmor, syncOffhand, syncEnder, syncXp, syncHealthFood);
 
-        // Si aucune data encore -> snapshot vide
+        // ✅ Si aucune sauvegarde -> NE RIEN FAIRE
         if (loaded == null) {
-            loaded = new InvSnapshot();
-            loaded.storageContents = new org.bukkit.inventory.ItemStack[36];
-            if (syncArmor) loaded.armorContents = new org.bukkit.inventory.ItemStack[4];
-            if (syncEnder) loaded.enderContents = new org.bukkit.inventory.ItemStack[27];
-            if (syncOffhand) loaded.offhandItem = null;
+            return;
         }
 
         loaded.apply(p, syncArmor, syncOffhand, syncEnder, syncXp, syncHealthFood);
+
+        try {
+            loaded.apply(p, syncArmor, syncOffhand, syncEnder, syncXp, syncHealthFood);
+        } catch (Exception ex) {
+            plugin.getLogger().severe("Erreur load inventaire pour " + p.getName());
+            ex.printStackTrace();
+        }
+
+        debug("Load inventaire " + p.getName() + " group=" + targetGroup);
     }
 
+
+    private final boolean debug = plugin.getConfig().getBoolean("inv-sync.debug", false);
+    private void debug(String msg) {
+        if (debug) {
+            plugin.getLogger().info("[InvSync DEBUG] " + msg);
+        }
+    }
+
+
+
     /**
-     * ✅ Swap SAFE: save old -> lock -> close inv -> load new AFTER 1 tick
-     * ❌ Aucun clear() ici => survie jamais vidée par le plugin
+     * Swap SAFE:
+     * 1) Lock
+     * 2) Save ancien mode
+     * 3) Après 1 tick → load nouveau mode
+     * Aucun clear manuel.
      */
     public void swap(Player p, GameMode newMode) {
         if (!enabled) return;
-
+        debug("Swap " + p.getName() + " -> " + newMode);
         lock(p);
         p.closeInventory();
 
-        // Sauvegarde l'état du mode actuel (SURV/ADV ou CREA/SPEC)
+        // Sauvegarde inventaire actuel
         saveCurrent(p);
 
-        // Charge l'inventaire du nouveau groupe après 1 tick
+        // Charge nouvel inventaire 1 tick après
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!p.isOnline()) return;
+
             loadFor(p, newMode);
         }, 1L);
+    }
+
+    public JavaPlugin getPlugin() {
+        return plugin;
     }
 }

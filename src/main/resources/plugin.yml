@@ -17,6 +17,10 @@ softdepend:
   - Vault
 
 commands:
+  invbackup:
+    description: Gestion des backups inventaires
+    usage: /invbackup restore <joueur> <date>
+
   ragnardeath:
     description: Event La Mort de Ragnar (narration + mobs buff)
     usage: /ragnardeath <start|stop|status>
@@ -51,6 +55,9 @@ commands:
     usage: /clearlag
 
 permissions:
+  deepstone.invbackup.restore:
+    default: op
+
   deepstone.event.ragnardeath:
     description: Lancer / arrêter l'event RagnarDeath
     default: op

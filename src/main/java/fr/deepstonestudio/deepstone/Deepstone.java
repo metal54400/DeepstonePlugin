@@ -16,6 +16,7 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import fr.deepstonestudio.deepstone.storage.InvBackupManager;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,6 +37,7 @@ public final class Deepstone extends JavaPlugin {
     private BlessingManager blessingManager;
     private ClearService clearService;
     private ClearLoop clearLoop;
+    private InvBackupManager backupManager;
 
     private ClanService clans;
     private WarService warService;
@@ -96,6 +98,12 @@ public final class Deepstone extends JavaPlugin {
         protectionManager = new ProtectionManager(this);
         protectionManager.startCleanupTask();
 
+        TipsStore tipsStore = new TipsStore(this);
+        tipsStore.load();
+
+        TipsService tipsService = new TipsService(this, tipsStore);
+        tipsService.start();
+
         blessingManager = new BlessingManager(this);
         DeepstoneAPI.init(this);
 
@@ -125,6 +133,11 @@ public final class Deepstone extends JavaPlugin {
             c.setTabCompleter(cmd);
         });
 
+        registerCommand("invbackup", c ->
+                c.setExecutor(new InvBackupCommand(this, invSync))
+        );
+        registerCommand("tips", c -> c.setExecutor(new TipsCommand(this,tipsStore, tipsService)));
+
         registerCommand("war", c -> c.setExecutor(new WarCommand(clans, warService)));
 
         SagaStore sagaStore = new SagaStore(this);
@@ -144,6 +157,7 @@ public final class Deepstone extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new BlessingListener(blessingManager), this);
         Bukkit.getPluginManager().registerEvents(new SacrificeListener(sacrificeMap), this);
         Bukkit.getPluginManager().registerEvents(new PriereDeathListener(priereDeathCauseMap), this);
+        Bukkit.getPluginManager().registerEvents(new ZombieInfectListener(this), this);
 
         invSync = new InvSyncManager(this);
         if (invSync.isEnabled()) {
@@ -198,6 +212,17 @@ public final class Deepstone extends JavaPlugin {
                     this
             );
             afkService.start();
+        }
+
+        Plugin papi = Bukkit.getPluginManager().getPlugin("PlaceholderAPI");
+        if (papi != null && papi.isEnabled()) {
+            new DeepstoneExpansion(
+                    this,
+                    this.afkService,
+                    this.clans,
+                    this.essentialsHook
+            ).register();
+            getLogger().info("Expansion PlaceholderAPI Deepstone enregistrée (afk + clan + online).");
         }
     }
 
@@ -268,7 +293,12 @@ public final class Deepstone extends JavaPlugin {
         if (afkService != null) afkService.stop();
         if (ragnarAuto != null) ragnarAuto.stop();
         if (ragnarEvent != null && ragnarEvent.isRunning()) ragnarEvent.stop();
-        if (invSync != null) invSync.flush();
+        try {
+            if (invSync != null) invSync.flush();
+        } catch (Exception e) {
+            getLogger().severe("Erreur flush invSync");
+            e.printStackTrace();
+        }
         if (clans != null) {
             try {
                 clans.saveAll();
@@ -289,4 +319,8 @@ public final class Deepstone extends JavaPlugin {
     public ClanService getClans() { return clans; }
     public WarService getWarService() { return warService; }
     public GloryService getGloryService() { return gloryService; }
+
+    public boolean isDebug() {
+        return getConfig().getBoolean("debug", false);
+    }
 }

@@ -1,5 +1,5 @@
 name: Deepstone
-version: 0.20.1
+version: 0.21.1
 description: Le plugin c'est lié sur Les Nordique
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
@@ -7,7 +7,6 @@ website: https://deep.deespstone.fr
 authors:
   - Deepstone-Studio
   - metal54400_
-
 depend:
   - ChestShop
   - GriefPrevention
@@ -18,6 +17,20 @@ softdepend:
   - Vault
 
 commands:
+  invbackup:
+    description: Gestion des backups inventaires
+    usage: /invbackup restore <joueur> <date>
+
+  ragnardeath:
+    description: Event La Mort de Ragnar (narration + mobs buff)
+    usage: /ragnardeath <start|stop|status>
+    permission: deepstone.event.ragnardeath
+
+  saga:
+    description: Raconte la saga de Ragnar et de ses proches
+    usage: /saga [start|next|prev|chapter|reset]
+    permission: deepstone.saga
+
   tips:
     description: Active/Désactive les messages d'aide automatiques.
     usage: /tips | /tips reload
@@ -42,6 +55,16 @@ commands:
     usage: /clearlag
 
 permissions:
+  deepstone.invbackup.restore:
+    default: op
+
+  deepstone.event.ragnardeath:
+    description: Lancer / arrêter l'event RagnarDeath
+    default: op
+
+  deepstone.saga:
+    default: true
+
   deepstone.tips:
     default: true
 
@@ -77,3 +100,4 @@ permissions:
   deepstone.rembourse:
     description: Permissions modérateur
     default: op
+
