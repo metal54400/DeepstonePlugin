@@ -97,6 +97,7 @@ public final class Deepstone extends JavaPlugin {
         protectionManager.startCleanupTask();
 
         blessingManager = new BlessingManager(this);
+        DeepstoneAPI.init(this);
 
         clearService = new ClearService(this);
         clearLoop = new ClearLoop(this, clearService);
