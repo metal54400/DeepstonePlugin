@@ -13,6 +13,9 @@ import fr.deepstonestudio.deepstone.util.*;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,7 +27,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public final class Deepstone extends JavaPlugin {
+
+public final class Deepstone extends JavaPlugin implements Listener {
 
     public static Deepstone instance;
 
@@ -38,6 +42,7 @@ public final class Deepstone extends JavaPlugin {
     private ClearService clearService;
     private ClearLoop clearLoop;
     private InvBackupManager backupManager;
+    private ServiceMonitor serviceMonitor;
 
     private ClanService clans;
     private WarService warService;
@@ -97,6 +102,8 @@ public final class Deepstone extends JavaPlugin {
     private void setupCore() {
         protectionManager = new ProtectionManager(this);
         protectionManager.startCleanupTask();
+
+        serviceMonitor = new ServiceMonitor(this);
 
         TipsStore tipsStore = new TipsStore(this);
         tipsStore.load();
@@ -158,6 +165,7 @@ public final class Deepstone extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new SacrificeListener(sacrificeMap), this);
         Bukkit.getPluginManager().registerEvents(new PriereDeathListener(priereDeathCauseMap), this);
         Bukkit.getPluginManager().registerEvents(new ZombieInfectListener(this), this);
+        Bukkit.getPluginManager().registerEvents(this, this);
 
         invSync = new InvSyncManager(this);
         if (invSync.isEnabled()) {
@@ -322,5 +330,14 @@ public final class Deepstone extends JavaPlugin {
 
     public boolean isDebug() {
         return getConfig().getBoolean("debug", false);
+    }
+
+    // =====================================================
+    // Event
+    // =====================================================
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        serviceMonitor.registerJoin();
     }
 }
