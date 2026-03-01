@@ -17,6 +17,10 @@ softdepend:
   - Vault
 
 commands:
+  aelle:
+    description: Spawn Ælle et déclenche la narration
+    permission: deepstone.event.ragnardeath
+
   invbackup:
     description: Gestion des backups inventaires
     usage: /invbackup restore <joueur> <date>

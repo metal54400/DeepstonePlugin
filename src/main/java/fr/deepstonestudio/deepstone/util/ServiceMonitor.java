@@ -37,35 +37,48 @@ public class ServiceMonitor {
 
         statsFile = new File(plugin.getDataFolder(), "stats.json");
         load();
-        stats.restarts.add(System.currentTimeMillis());
+        if (stats != null) {
+            stats.restarts.add(System.currentTimeMillis());
+        }
         startScheduler();
     }
 
     private void startScheduler() {
         // --- Toutes les 10 sec : mise à jour stats locales
-        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            stats.tps = Bukkit.getServer().getTPS()[0];
-            stats.onlinePlayers = Bukkit.getOnlinePlayers().size();
-            stats.uptime = (System.currentTimeMillis() - startTime) / 1000;
-            stats.lastUpdate = System.currentTimeMillis();
-            save();
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            try {
+                if (stats == null) return;
+                double[] tps = Bukkit.getServer().getTPS();
+                stats.tps = (tps != null && tps.length > 0) ? tps[0] : 0.0;
+                stats.onlinePlayers = (Bukkit.getOnlinePlayers() != null) ? Bukkit.getOnlinePlayers().size() : 0;
+                stats.uptime = (System.currentTimeMillis() - startTime) / 1000;
+                stats.lastUpdate = System.currentTimeMillis();
+                save();
+            } catch (Exception e) {
+                plugin.getLogger().warning("⚠️ Erreur mise à jour stats locales: " + e.getMessage());
+            }
         }, 0L, 200L);
 
         // --- Toutes les 15 min : envoyer stats au dashboard PHP
-        long interval15Min = 15 * 60 * 20L; // 15 min en ticks
+        long interval15Min = 15 * 60 * 20L;
         Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::sendStatsToDashboard, 0L, interval15Min);
     }
 
     public void registerJoin() {
-        String month = YearMonth.now().toString();
-        stats.monthlyJoins.put(month,
-                stats.monthlyJoins.getOrDefault(month, 0) + 1);
-        stats.totalJoins++;
-        save();
+        try {
+            if (stats == null) return;
+            String month = YearMonth.now().toString();
+            stats.monthlyJoins.put(month, stats.monthlyJoins.getOrDefault(month, 0) + 1);
+            stats.totalJoins++;
+            save();
+        } catch (Exception e) {
+            plugin.getLogger().warning("⚠️ Erreur registerJoin: " + e.getMessage());
+        }
     }
 
     private void sendStatsToDashboard() {
         try {
+            if (stats == null) return;
             URL url = new URL(DASHBOARD_URL);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("POST");
@@ -101,24 +114,25 @@ public class ServiceMonitor {
                 return;
             }
 
-            FileReader reader = new FileReader(statsFile);
-            stats = gson.fromJson(reader, Stats.class);
-            reader.close();
+            try (FileReader reader = new FileReader(statsFile)) {
+                stats = gson.fromJson(reader, Stats.class);
+            }
+            if (stats == null) stats = new Stats();
 
         } catch (Exception e) {
             stats = new Stats();
-            e.printStackTrace();
+            plugin.getLogger().warning("⚠️ Erreur chargement stats.json: " + e.getMessage());
         }
     }
 
     private void save() {
         try {
-            FileWriter writer = new FileWriter(statsFile);
-            gson.toJson(stats, writer);
-            writer.flush();
-            writer.close();
+            if (stats == null) return;
+            try (FileWriter writer = new FileWriter(statsFile)) {
+                gson.toJson(stats, writer);
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            plugin.getLogger().warning("⚠️ Erreur sauvegarde stats.json: " + e.getMessage());
         }
     }
 

@@ -13,6 +13,7 @@ import fr.deepstonestudio.deepstone.util.*;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -43,7 +44,7 @@ public final class Deepstone extends JavaPlugin implements Listener {
     private ClearLoop clearLoop;
     private InvBackupManager backupManager;
     private ServiceMonitor serviceMonitor;
-
+    private AelleEvents aelleEvents;
     private ClanService clans;
     private WarService warService;
     private GloryService gloryService;
@@ -104,7 +105,7 @@ public final class Deepstone extends JavaPlugin implements Listener {
         protectionManager.startCleanupTask();
 
         serviceMonitor = new ServiceMonitor(this);
-
+        aelleEvents = new AelleEvents(this);
         TipsStore tipsStore = new TipsStore(this);
         tipsStore.load();
 
@@ -140,6 +141,12 @@ public final class Deepstone extends JavaPlugin implements Listener {
             c.setTabCompleter(cmd);
         });
 
+        registerCommand("aelle", c -> c.setExecutor((sender, cmd, label, args) -> {
+            if (!(sender instanceof Player player)) return true;
+            aelleEvents.spawnAelle(player.getLocation());
+            return true;
+        }));
+
         registerCommand("invbackup", c ->
                 c.setExecutor(new InvBackupCommand(this, invSync))
         );
@@ -166,6 +173,7 @@ public final class Deepstone extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(new PriereDeathListener(priereDeathCauseMap), this);
         Bukkit.getPluginManager().registerEvents(new ZombieInfectListener(this), this);
         Bukkit.getPluginManager().registerEvents(this, this);
+        Bukkit.getPluginManager().registerEvents(new AelleDeathEvent(aelleEvents), this);
 
         invSync = new InvSyncManager(this);
         if (invSync.isEnabled()) {

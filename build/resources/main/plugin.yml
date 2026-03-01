@@ -1,5 +1,5 @@
 name: Deepstone
-version: 0.21.3
+version: 0.21.4
 description: Le plugin c'est lié sur Les Nordique
 main: fr.deepstonestudio.deepstone.Deepstone
 api-version: '1.21'
@@ -17,6 +17,10 @@ softdepend:
   - Vault
 
 commands:
+  aelle:
+    description: Spawn Ælle et déclenche la narration
+    permission: deepstone.event.ragnardeath
+
   invbackup:
     description: Gestion des backups inventaires
     usage: /invbackup restore <joueur> <date>
